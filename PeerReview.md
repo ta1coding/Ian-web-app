@@ -32,7 +32,7 @@ In this game, you will be in a speedy car on the highway, running away from a co
 
 - **Beginner Levels**: The map is bright and dry.
 - **Progressive Levels**:
-  - Weather gets more challenging. For example, after a certain number of levels, it starts to rain, making it more difficult for the user to see, requiring windshield wipers, and slowing down movement.
+  - Weather gets more challenging. For example, after a certain number of levels, it starts to rain, making it more difficult for the user to see, requiring windshield wipers to swipe across the users screen, and slowing down movement.
   - There will also be nighttime modes where headlights are necessary to see clearly.
   - The map will curve in harder levels, making it tougher for the user to stay on course.
 
@@ -120,5 +120,3 @@ In this game, you will be in a speedy car on the highway, running away from a co
 
 - Gameplay screen is mostly clear, with minimal UI elements: map (top left), pause (top right), speed (bottom right).
 - The start screen features moving cars in the background, with the "Play Now" button as the main focus.
-
-
