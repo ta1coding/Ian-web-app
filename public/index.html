@@ -127,6 +127,7 @@
                 0.5,
                 Math.random() * -200 + 50
             );
+            trafficCar.userData.speed = 0.2 + Math.random() * 0.1; // Assign a random speed
             trafficCars.push(trafficCar);
             scene.add(trafficCar);
         }
@@ -136,7 +137,8 @@
         let gameOver = false;
         let playerSpeed = 0;
         const maxSpeed = 0.5; // Max speed for acceleration
-        let accelerating = false;
+        const acceleration = 0.01; // Acceleration rate
+        const deceleration = 0.02; // Deceleration rate
 
         // Update score
         const scoreboard = document.getElementById('scoreboard');
@@ -149,10 +151,10 @@
 
             // Move traffic cars towards the player
             trafficCars.forEach((trafficCar) => {
-                trafficCar.position.z += 0.2 + Math.random() * 0.1; // Varying speed
+                trafficCar.position.z += trafficCar.userData.speed; // Traffic cars move towards the player
 
-                if (trafficCar.position.z > 20) {
-                    trafficCar.position.z = -200; // Reset position
+                if (trafficCar.position.z > playerCar.position.z + 20) {
+                    trafficCar.position.z = playerCar.position.z - 200; // Reset position
                     trafficCar.position.x = (Math.random() - 0.5) * 8; // Random x
                 }
 
@@ -169,10 +171,14 @@
             // Loop trees for infinite scrolling
             trees.forEach((tree) => {
                 tree.position.z += 0.2; // Move towards player
-                if (tree.position.z > 20) {
-                    tree.position.z = -200; // Reset position
+                if (tree.position.z > playerCar.position.z + 20) {
+                    tree.position.z = playerCar.position.z - 200; // Reset position
                 }
             });
+
+            // Enforce road boundaries
+            if (playerCar.position.x < -4.5) playerCar.position.x = -4.5;
+            if (playerCar.position.x > 4.5) playerCar.position.x = 4.5;
 
             // Update camera position (fixed behind the player)
             camera.position.set(playerCar.position.x, 5, playerCar.position.z + 10);
@@ -191,26 +197,38 @@
         const keys = {};
         document.addEventListener('keydown', (event) => {
             keys[event.key] = true;
-            if (event.key === 'ArrowUp') accelerating = true;
         });
         document.addEventListener('keyup', (event) => {
             keys[event.key] = false;
-            if (event.key === 'ArrowUp') accelerating = false;
         });
 
         // Update player car based on keys
         function handleInput() {
+            // Move left/right
             if (keys['ArrowLeft']) playerCar.position.x -= 0.15;
             if (keys['ArrowRight']) playerCar.position.x += 0.15;
-            if (keys['ArrowDown']) playerCar.position.z += 0.15; // Move backward
 
-            if (accelerating) {
-                playerSpeed = Math.min(playerSpeed + 0.01, maxSpeed); // Accelerate
+            // Enforce road boundaries immediately after movement
+            if (playerCar.position.x < -4.5) playerCar.position.x = -4.5;
+            if (playerCar.position.x > 4.5) playerCar.position.x = 4.5;
+
+            // Move forward/backward with acceleration/deceleration
+            if (keys['ArrowUp']) {
+                playerSpeed = Math.min(playerSpeed + acceleration, maxSpeed);
+            } else if (keys['ArrowDown']) {
+                playerSpeed = Math.max(playerSpeed - acceleration, -maxSpeed / 2); // Allow reverse
             } else {
-                playerSpeed = Math.max(playerSpeed - 0.01, 0); // Decelerate
+                // No key pressed, decelerate to 0
+                if (playerSpeed > 0) {
+                    playerSpeed = Math.max(playerSpeed - deceleration, 0);
+                } else if (playerSpeed < 0) {
+                    playerSpeed = Math.min(playerSpeed + deceleration, 0);
+                }
             }
 
-            playerCar.position.z -= playerSpeed; // Apply speed
+            // Update player car position
+            playerCar.position.z -= playerSpeed;
+
             setTimeout(handleInput, 16);
         }
         handleInput();
