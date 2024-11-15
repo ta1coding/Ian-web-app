@@ -10,170 +10,170 @@
 
 ---
 
-### Class: Player
+### Class: Player - (P0/P1)
 
 This class represents the player and contains all player-related data.
 
 **Variables:**
 
-- `name`: String  
+- `name`: String  (P0)
   Player's username.
 
-- `car`: Car  
+- `car`: Car  (P1 - doesnt need multiple cars)
   The car currently selected by the player.
 
-- `coins`: Integer  
+- `coins`: Integer (P0)
   Amount of in-game currency the player has.
 
-- `garage`: List<Car>  
+- `garage`: List<Car>  (P1)
   Collection of cars owned by the player.
 
-- `inventory`: List<CosmeticItem>  
+- `inventory`: List<CosmeticItem>  (P2 - cosmetics can be added in future iterations)
   List of cosmetic items (like liveries, rims, colors) the player has acquired.
 
-- `boostsAvailable`: Integer  
+- `boostsAvailable`: Integer  (P1 - importnant but not requried to the core gameplay)
   Number of boost charges available to the player.
 
-- `controls`: ControlScheme  
+- `controls`: ControlScheme  (P0)
   Key bindings for player actions.
 
 ---
 
-### Class: Car
+### Class: Car (P0)
 
 This class represents the player's car.
 
 **Variables:**
 
-- `modelName`: String  
+- `modelName`: String  (P0)
   Name of the car model.
 
-- `speed`: Float  
+- `speed`: Float  (P0)
   Maximum speed of the car.
 
-- `acceleration`: Float  
+- `acceleration`: Float  (P0)
   How quickly the car increases speed.
 
-- `braking`: Float  
+- `braking`: Float  (P0)
   Effectiveness of the car's braking system.
 
-- `handling`: Float  
+- `handling`: Float  (P1)
   Car's responsiveness to steering inputs.
 
-- `price`: Integer  
+- `price`: Integer  (P1)
   Cost of the car in coins.
 
-- `cosmetics`: Cosmetics  
+- `cosmetics`: Cosmetics  (P2)
   Visual customization options applied to the car.
 
-- `boostCharge`: Float  
+- `boostCharge`: Float  (P1)
   Current charge level of the car's boost ability.
 
-- `headlightsOn`: Boolean  
+- `headlightsOn`: Boolean  (P2)
   Indicates whether the headlights are turned on.
 
 ---
 
-### Class: Level
+### Class: Level ()
 
 This class encapsulates all level-specific data and mechanics, including the cop car and weather.
 
 **Variables:**
 
-- `levelNumber`: Integer  
+- `levelNumber`: Integer  (P0 - but will only have 1 level on mvp)
   Identifier for the level's sequence.
 
-- `distanceToFinish`: Float  
+- `distanceToFinish`: Float  (P0 - but static for mvp)
   Total distance the player needs to travel to complete the level.
 
-- `copSpeed`: Float  
+- `copSpeed`: Float  (P0 - same)
   Speed at which the cop car pursues the player.
 
-- `copCarModel`: String  
+- `copCarModel`: String  (P2)
   Model name of the cop car.
 
-- `copPosition`: Coordinates  
+- `copPosition`: Coordinates  (P0)
   Current position of the cop car.
 
-- `weatherType`: String  
+- `weatherType`: String  (P2 - not neccessicary for core gameplay)
   Current weather condition (e.g., "Sunny", "Rainy").
 
-- `visibility`: Float  
+- `visibility`: Float  (P2 - not neccessicary for core gameplay)
   Level of visibility affected by weather conditions.
 
-- `isRaining`: Boolean  
+- `isRaining`: Boolean  (P2 - not neccessicary for core gameplay)
   Indicates whether it is raining.
 
-- `windshieldWipersOn`: Boolean  
+- `windshieldWipersOn`: Boolean  (P2 - not neccessicary for core gameplay)
   Indicates whether the windshield wipers are active.
 
-- `timeOfDay`: String  
+- `timeOfDay`: String  (P2 - not neccessicary for core gameplay)
   Indicates whether it's day or night.
 
-- `difficulty`: String  
+- `difficulty`: String  (P1 - not multiple levels)
   Level of challenge (e.g., "Easy", "Medium", "Hard").
 
-- `starsEarned`: Integer  
+- `starsEarned`: Integer  (P1 - good feature but not first to be implemented)
   Number of stars awarded based on performance (0 to 3).
 
-- `timer`: Float  
+- `timer`: Float  (P0)
   Time taken to complete the level.
 
-- `playerPosition`: Coordinates  
+- `playerPosition`: Coordinates  (P0)
   Current position of the player's car.
 
-- `map`: Map  
+- `map`: Map  (P1)
   Map object containing the layout for the level.
 
 ---
 
-### Class: Map
+### Class: Map (P0)
 
 This class defines the specific layout and terrain features for each level.
 
 **Variables:**
 
-- `curvature`: Float  
+- `curvature`: Float  (P0)
   Degree of the road's curvature.
 
-- `length`: Float  
+- `length`: Float  (P0)
   Total length of the map.
 
-- `obstacles`: List<Obstacle>  
+- `obstacles`: List<Obstacle>  (P1)
   Obstacles present on the map.
 
-- `terrainFeatures`: List<TerrainFeature>  
+- `terrainFeatures`: List<TerrainFeature>  (P1)
   Specific features like hills or curves.
 
-- `backgroundColor`: String  
+- `backgroundColor`: String  (P1)
   Color scheme of the map (e.g., for daytime or nighttime).
 
 ---
 
 ### Associated Classes and Data Structures
 
-#### Class: ControlScheme
+#### Class: ControlScheme (P0)
 
 Defines the player's control keys.
 
 **Variables:**
 
-- `leftKey`: String  
+- `leftKey`: String  (P0)
   Key assigned to move the car left.
 
-- `rightKey`: String  
+- `rightKey`: String  (P0)
   Key assigned to move the car right.
 
-- `boostKey`: String  
+- `boostKey`: String  (P1)
   Key assigned to activate the car's boost.
 
-- `honkKey`: String  
+- `honkKey`: String  (P1 - easy to implement)
   Key assigned to honk the car's horn.
 
-- `wipersKey`: String  
+- `wipersKey`: String  (P2)
   Key assigned to toggle the windshield wipers.
 
-- `headlightsKey`: String  
+- `headlightsKey`: String  (P2)
   Key assigned to toggle the headlights.
 
 ---
@@ -212,19 +212,19 @@ Items that can be applied to cars for visual customization.
 
 ---
 
-#### Class: Obstacle
+#### Class: Obstacle (P1)
 
 Represents obstacles on the map.
 
 **Variables:**
 
-- `type`: String  
+- `type`: String  (P1)
   Kind of obstacle (e.g., "OtherCar", "Pothole", "Construction").
 
-- `position`: Coordinates  
+- `position`: Coordinates  (P1)
   Location of the obstacle on the map.
 
-- `effect`: String  
+- `effect`: String  (P1)
   Impact on the player when encountered (e.g., "SlowDown", "GameOver").
 
 ---
