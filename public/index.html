@@ -51,39 +51,70 @@
         directionalLight.position.set(0, 10, 10);
         scene.add(directionalLight);
 
+        // Define road parameters
+        const roadWidth = 10;
+        const roadLength = 20000; // Road length
+
         // Create the road
-        const roadGeometry = new THREE.PlaneGeometry(10, 200);
+        const roadGeometry = new THREE.PlaneGeometry(roadWidth, roadLength);
         const roadMaterial = new THREE.MeshPhongMaterial({ color: 0x222222 });
         const road = new THREE.Mesh(roadGeometry, roadMaterial);
         road.rotation.x = -Math.PI / 2; // Lay flat
-        road.position.z = 0;
+        road.position.z = 0; // Centered at z = 0
         scene.add(road);
+
+        // Add lane lines
+        const laneLineMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const dashLength = 5;
+        const gapLength = 5;
+        const totalDashLength = dashLength + gapLength;
+        const numberOfDashes = Math.floor(roadLength / totalDashLength);
+
+        const laneLinePositions = [-2.5, 0, 2.5]; // Positions for the lane lines
+
+        laneLinePositions.forEach((xPos) => {
+            for (let i = 0; i < numberOfDashes; i++) {
+                const zPos = -roadLength / 2 + i * totalDashLength + dashLength / 2;
+                const lineGeometry = new THREE.BoxGeometry(0.1, 0.01, dashLength);
+                const line = new THREE.Mesh(lineGeometry, laneLineMaterial);
+                line.position.set(xPos, 0.01, zPos);
+                scene.add(line);
+            }
+        });
 
         // Barriers (left and right)
         const barrierMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
-        const leftBarrier = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1, 200), barrierMaterial);
-        const rightBarrier = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1, 200), barrierMaterial);
+        const leftBarrier = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1, roadLength), barrierMaterial);
+        const rightBarrier = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1, roadLength), barrierMaterial);
 
-        leftBarrier.position.set(-5.25, 0.5, 0);
-        rightBarrier.position.set(5.25, 0.5, 0);
+        leftBarrier.position.set(-roadWidth / 2 - 0.25, 0.5, 0);
+        rightBarrier.position.set(roadWidth / 2 + 0.25, 0.5, 0);
         scene.add(leftBarrier, rightBarrier);
+
+        // Lane positions for cars
+        const lanePositions = [-3.75, -1.25, 1.25, 3.75]; // Centers of the four lanes
 
         // Create the player car
         const playerCar = createCar(0xff0000);
-        playerCar.position.set(0, 0.5, 5); // Start position
+        playerCar.position.set(0, 0.5, 0); // Start at z = 0
         scene.add(playerCar);
 
-        // Create light green trees on the sides
+        // Create the cop car
+        const copCar = createCar(0x0000ff); // Blue cop car
+        copCar.position.set(0, 0.5, -5); // Start behind the player
+        scene.add(copCar);
+
+        // Create trees on the sides
         const trees = [];
         const treeGeometry = new THREE.CylinderGeometry(0, 0.5, 1.5, 8);
         const treeMaterial = new THREE.MeshPhongMaterial({ color: 0x228b22 }); // Green color
 
-        for (let i = 0; i < 100; i++) {
+        for (let i = 0; i < 200; i++) {
             const tree = new THREE.Mesh(treeGeometry, treeMaterial);
             tree.position.set(
-                Math.random() > 0.5 ? 6 + Math.random() * 4 : -6 - Math.random() * 4,
+                Math.random() > 0.5 ? roadWidth / 2 + 1 + Math.random() * 5 : -roadWidth / 2 - 1 - Math.random() * 5,
                 0.75,
-                Math.random() * 400 - 200
+                -roadLength / 2 + Math.random() * roadLength
             );
             trees.push(tree);
             scene.add(tree);
@@ -120,14 +151,18 @@
 
         // Traffic cars
         const trafficCars = [];
-        for (let i = 0; i < 10; i++) {
-            const trafficCar = createCar(0x0000ff); // Blue traffic cars
+        const trafficCarCount = 100; // Number of traffic cars
+
+        for (let i = 0; i < trafficCarCount; i++) {
+            const trafficCar = createCar(0x00ff00); // Green traffic cars
+            const lane = lanePositions[Math.floor(Math.random() * lanePositions.length)];
+            const initialZ = Math.random() * 1000 + 50; // Positions ahead of the player
             trafficCar.position.set(
-                (Math.random() - 0.5) * 8, // Random x-position within road
+                lane, // Stay in a lane
                 0.5,
-                Math.random() * -200 + 50
+                initialZ
             );
-            trafficCar.userData.speed = 0.2 + Math.random() * 0.1; // Assign a random speed
+            trafficCar.userData.speed = -0.1 - Math.random() * 0.2; // Random speed between 0.4 and 0.8
             trafficCars.push(trafficCar);
             scene.add(trafficCar);
         }
@@ -136,9 +171,12 @@
         let score = 0;
         let gameOver = false;
         let playerSpeed = 0;
-        const maxSpeed = 0.5; // Max speed for acceleration
-        const acceleration = 0.01; // Acceleration rate
-        const deceleration = 0.02; // Deceleration rate
+        const maxSpeed = 0.6; // Adjusted max speed for player
+        const acceleration = 0.01; // Decreased player acceleration
+        const deceleration = 0.02; // Adjusted deceleration
+        const copMaxSpeed = 0.5; // Max speed for cop car
+        const copAcceleration = 0.005; // Decreased cop acceleration
+        let copCurrentSpeed = 0; // Initial cop speed
 
         // Update score
         const scoreboard = document.getElementById('scoreboard');
@@ -149,39 +187,62 @@
 
             requestAnimationFrame(animate);
 
-            // Move traffic cars towards the player
-            trafficCars.forEach((trafficCar) => {
-                trafficCar.position.z += trafficCar.userData.speed; // Traffic cars move towards the player
+            // Increase cop car speed gradually up to its max speed
+            if (copCurrentSpeed < copMaxSpeed) {
+                copCurrentSpeed += copAcceleration;
+            } else {
+                copCurrentSpeed = copMaxSpeed;
+            }
 
-                if (trafficCar.position.z > playerCar.position.z + 20) {
-                    trafficCar.position.z = playerCar.position.z - 200; // Reset position
-                    trafficCar.position.x = (Math.random() - 0.5) * 8; // Random x
+            // Move the cop car towards the player
+            const copDirection = new THREE.Vector3();
+            copDirection.subVectors(playerCar.position, copCar.position).normalize();
+            copCar.position.addScaledVector(copDirection, copCurrentSpeed);
+
+            // Move traffic cars
+            trafficCars.forEach((trafficCar) => {
+                // Move traffic cars along z
+                trafficCar.position.z -= trafficCar.userData.speed;
+
+                // If traffic car goes behind the player, reset position ahead
+                if (trafficCar.position.z < playerCar.position.z - 100) {
+                    trafficCar.position.z = playerCar.position.z + 1000 + Math.random() * 500;
+                    const lane = lanePositions[Math.floor(Math.random() * lanePositions.length)];
+                    trafficCar.position.x = lane;
+                    trafficCar.userData.speed = 0.4 + Math.random() * 0.4; // Random speed between 0.4 and 0.8
                 }
 
-                // Collision detection
+                // Collision detection with traffic cars
                 if (
-                    Math.abs(playerCar.position.x - trafficCar.position.x) < 1.5 &&
-                    Math.abs(playerCar.position.z - trafficCar.position.z) < 3
+                    Math.abs(playerCar.position.x - trafficCar.position.x) < 1.2 &&
+                    Math.abs(playerCar.position.z - trafficCar.position.z) < 4
                 ) {
                     gameOver = true;
-                    alert('Game Over!');
+                    alert('You crashed into a car! Game Over!');
                 }
             });
 
+            // Collision detection with cop car
+            const distanceToCop = playerCar.position.distanceTo(copCar.position);
+            if (distanceToCop < 2) {
+                gameOver = true;
+                alert('You were caught by the cops! Game Over!');
+            }
+
             // Loop trees for infinite scrolling
             trees.forEach((tree) => {
-                tree.position.z += 0.2; // Move towards player
-                if (tree.position.z > playerCar.position.z + 20) {
-                    tree.position.z = playerCar.position.z - 200; // Reset position
+                tree.position.z -= playerSpeed; // Move with the player
+                if (tree.position.z < playerCar.position.z - 200) {
+                    tree.position.z = playerCar.position.z + roadLength / 2;
                 }
             });
 
             // Enforce road boundaries
-            if (playerCar.position.x < -4.5) playerCar.position.x = -4.5;
-            if (playerCar.position.x > 4.5) playerCar.position.x = 4.5;
+            if (playerCar.position.x < -roadWidth / 2 + 0.75) playerCar.position.x = -roadWidth / 2 + 0.75;
+            if (playerCar.position.x > roadWidth / 2 - 0.75) playerCar.position.x = roadWidth / 2 - 0.75;
 
-            // Update camera position (fixed behind the player)
-            camera.position.set(playerCar.position.x, 5, playerCar.position.z + 10);
+            // Update camera position to follow the player
+            camera.position.set(playerCar.position.x, 5, playerCar.position.z - 10);
             camera.lookAt(playerCar.position);
 
             // Update score
@@ -203,34 +264,95 @@
         });
 
         // Update player car based on keys
-        function handleInput() {
-            // Move left/right
-            if (keys['ArrowLeft']) playerCar.position.x -= 0.15;
-            if (keys['ArrowRight']) playerCar.position.x += 0.15;
 
-            // Enforce road boundaries immediately after movement
-            if (playerCar.position.x < -4.5) playerCar.position.x = -4.5;
-            if (playerCar.position.x > 4.5) playerCar.position.x = 4.5;
+        function createSmoke(scene) {
+    const smokeGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+    const smokeMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0xcccccc, 
+        transparent: true, 
+        opacity: 0.5 
+    });
+    const smoke = new THREE.Mesh(smokeGeometry, smokeMaterial);
+    scene.add(smoke);
+    return smoke;
+}
+function handleInput() {
+    let currentTiltAngle = 0;
+    const maxTiltAngle = Math.PI / 6; // Increased max tilt
+    const tiltSpeed = 0.02; // Speed of tilt acceleration
+    const smokeParticles = [];
 
-            // Move forward/backward with acceleration/deceleration
-            if (keys['ArrowUp']) {
-                playerSpeed = Math.min(playerSpeed + acceleration, maxSpeed);
-            } else if (keys['ArrowDown']) {
-                playerSpeed = Math.max(playerSpeed - acceleration, -maxSpeed / 2); // Allow reverse
-            } else {
-                // No key pressed, decelerate to 0
-                if (playerSpeed > 0) {
-                    playerSpeed = Math.max(playerSpeed - deceleration, 0);
-                } else if (playerSpeed < 0) {
-                    playerSpeed = Math.min(playerSpeed + deceleration, 0);
-                }
-            }
+    // Move left/right with gradual tilt
+    if (keys['ArrowLeft']) {
+        playerCar.position.x += 0.15;
+        currentTiltAngle = Math.min(currentTiltAngle + tiltSpeed, maxTiltAngle);
+        playerCar.rotation.z = -currentTiltAngle; // Tilt right when moving left
+        playerCar.rotation.y = -currentTiltAngle / 2; // Turn slightly
+        
+        // Add smoke particles
+        const smoke = createSmoke(scene);
+        smoke.position.copy(playerCar.position);
+        smoke.position.z -= 2; // Behind the car
+        smokeParticles.push(smoke);
+    }
+    if (keys['ArrowRight']) {
+        playerCar.position.x -= 0.15;
+        currentTiltAngle = Math.min(currentTiltAngle + tiltSpeed, maxTiltAngle);
+        playerCar.rotation.z = currentTiltAngle; // Tilt left when moving right
+        playerCar.rotation.y = currentTiltAngle / 2; // Turn slightly
+        
+        // Add smoke particles
+        const smoke = createSmoke(scene);
+        smoke.position.copy(playerCar.position);
+        smoke.position.z -= 2; // Behind the car
+        smokeParticles.push(smoke);
+    }
 
-            // Update player car position
-            playerCar.position.z -= playerSpeed;
-
-            setTimeout(handleInput, 16);
+    // Smooth return to no tilt when not moving horizontally
+    if (!keys['ArrowLeft'] && !keys['ArrowRight']) {
+        if (currentTiltAngle > 0) {
+            currentTiltAngle = Math.max(currentTiltAngle - tiltSpeed, 0);
+            playerCar.rotation.z = currentTiltAngle;
+            playerCar.rotation.y = 0;
         }
+    }
+
+    // Manage smoke particles
+    smokeParticles.forEach((smoke, index) => {
+        smoke.scale.multiplyScalar(1.05); // Grow
+        smoke.material.opacity -= 0.02; // Fade out
+        
+        // Remove smoke if too transparent
+        if (smoke.material.opacity <= 0) {
+            scene.remove(smoke);
+            smokeParticles.splice(index, 1);
+        }
+    });
+
+    // Rest of the existing movement logic remains the same
+    // ... (previous forward/backward movement code)
+    if (playerCar.position.x < -roadWidth / 2 + 0.75) playerCar.position.x = -roadWidth / 2 + 0.75;
+    if (playerCar.position.x > roadWidth / 2 - 0.75) playerCar.position.x = roadWidth / 2 - 0.75;
+
+    // Move forward/backward with acceleration/deceleration
+    if (keys['ArrowUp']) {
+        playerSpeed = Math.min(playerSpeed + acceleration, maxSpeed);
+    } else if (keys['ArrowDown']) {
+        playerSpeed = Math.max(playerSpeed - acceleration, -maxSpeed / 2); // Allow reverse
+    } else {
+        // No key pressed, decelerate to 0
+        if (playerSpeed > 0) {
+            playerSpeed = Math.max(playerSpeed - deceleration, 0);
+        } else if (playerSpeed < 0) {
+            playerSpeed = Math.min(playerSpeed + deceleration, 0);
+        }
+    }
+
+    // Update player car position
+    playerCar.position.z += playerSpeed;
+
+    setTimeout(handleInput, 16);
+}
         handleInput();
     </script>
 </body>
