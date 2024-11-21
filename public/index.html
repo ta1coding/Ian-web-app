@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Highway Racing Game</title>
     <style>
+        /* Your existing CSS code */
         body {
             margin: 0;
             overflow: hidden;
@@ -21,40 +22,186 @@
             padding: 10px 20px;
             border-radius: 5px;
             font-family: Arial, sans-serif;
+            z-index: 1;
         }
         #subtitle {
             position: absolute;
-        top: 20px;
-        left: 50%; /* Centered */
-        transform: translateX(-40%); /* Slightly offset to the left of center */
-        color: black;
-        font-family: Arial, sans-serif;
-        font-size: 48px;
-        font-weight: bold;
-        text-align: left;
-        opacity: 0;
-        transition: opacity 0.5s ease-in-out;
-        pointer-events: none;
-        text-shadow: 
-            -2px -2px 0 white,
-            2px -2px 0 white,
-            -2px 2px 0 white,
-            2px 2px 0 white;
-        width: 80%; /* Allow width for multiple lines */
-        line-height: 1.2; /* Improve line spacing */
+            top: 20px;
+            left: 50%;
+            transform: translateX(-40%);
+            color: black;
+            font-family: Arial, sans-serif;
+            font-size: 48px;
+            font-weight: bold;
+            text-align: left;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            pointer-events: none;
+            text-shadow: 
+                -2px -2px 0 white,
+                2px -2px 0 white,
+                -2px 2px 0 white,
+                2px 2px 0 white;
+            width: 80%;
+            line-height: 1.2;
+            z-index: 1;
+        }
+        /* Main Menu Styles */
+        #main-menu {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #add8e6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+        #game-title {
+            font-size: 48px;
+            margin-bottom: 40px;
+            font-family: Arial, sans-serif;
+            color: black;
+        }
+        #car-images {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+        .car-image {
+            width: 100px;
+            height: 50px;
+            margin: 0 50px;
+            position: relative;
+            background-color: transparent;
+        }
+        /* Car Shape Styles */
+        .car-body {
+            width: 100px;
+            height: 30px;
+            background-color: currentColor;
+            position: relative;
+            border-radius: 5px;
+        }
+        .car-top {
+            width: 60px;
+            height: 20px;
+            background-color: currentColor;
+            position: absolute;
+            top: -20px;
+            left: 20px;
+            border-radius: 5px 5px 0 0;
+        }
+        .wheel {
+            width: 20px;
+            height: 20px;
+            background-color: black;
+            border-radius: 50%;
+            position: absolute;
+            bottom: -10px;
+        }
+        .wheel.left {
+            left: 15px;
+        }
+        .wheel.right {
+            right: 15px;
+        }
+        /* Cop car styles */
+        #cop-car .car-body,
+        #cop-car .car-top {
+            color: blue;
+        }
+        /* User car styles */
+        #user-car .car-body,
+        #user-car .car-top {
+            color: red;
+        }
+        #start-button {
+            font-size: 36px;
+            padding: 15px 30px;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+        #settings-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 18px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        /* Loading Screen Styles */
+        #loading-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3;
+            display: none; /* Hidden initially */
         }
     </style>
+    <!-- Import map to resolve module specifiers -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.152.0/build/three.module.js",
+            "three/examples/jsm/loaders/FBXLoader.js": "https://unpkg.com/three@0.152.0/examples/jsm/loaders/FBXLoader.js",
+            "three/examples/jsm/objects/Sky.js": "https://unpkg.com/three@0.152.0/examples/jsm/objects/Sky.js",
+            "gsap": "https://unpkg.com/gsap@3.11.4/index.js"
+        }
+    }
+    </script>
 </head>
 <body>
-    <!-- Include Three.js -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
+    <!-- Main Menu -->
+    <div id="main-menu">
+        <h1 id="game-title">Escape the Cop</h1>
+        <div id="car-images">
+            <div id="cop-car" class="car-image">
+                <div class="car-body"></div>
+                <div class="car-top"></div>
+                <div class="wheel left"></div>
+                <div class="wheel right"></div>
+            </div>
+            <div id="user-car" class="car-image">
+                <div class="car-body"></div>
+                <div class="car-top"></div>
+                <div class="wheel left"></div>
+                <div class="wheel right"></div>
+            </div>
+        </div>
+        <!-- Disable the Start button initially -->
+        <button id="start-button" disabled>Start</button>
+        <button id="settings-button">Settings</button>
+    </div>
     <div id="scoreboard">Score: 0</div>
     <div id="subtitle"></div>
-    <script>
+    <div id="loading-screen">Loading... 0%</div>
+
+    <!-- Your JavaScript code -->
+    <script type="module">
+        import * as THREE from 'three';
+        import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
+        import { Sky } from 'three/examples/jsm/objects/Sky.js';
+        import gsap from 'gsap';
+
         // Set up the scene, camera, and renderer
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xadd8e6); // Light blue background
+
+        // Set the background color to light sky blue
+        scene.background = new THREE.Color(0x87ceeb); // Light blue background
 
         const camera = new THREE.PerspectiveCamera(
             75,
@@ -67,12 +214,47 @@
         document.body.appendChild(renderer.domElement);
 
         // Add lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-        directionalLight.position.set(0, 10, 10);
-        scene.add(directionalLight);
+        // Add a sun (Directional Light)
+        const sun = new THREE.DirectionalLight(0xffddaa, 1);
+        sun.position.set(-50, 100, -50);
+        scene.add(sun);
+
+        // Sun object for visual representation
+        const sunGeometry = new THREE.SphereGeometry(5, 32, 32);
+        const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffddaa });
+        const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
+        sunMesh.position.copy(sun.position);
+        scene.add(sunMesh);
+
+        // Optional: Add a procedural sky
+        function createProceduralSky() {
+            const sky = new Sky();
+            sky.scale.setScalar(450000);
+            scene.add(sky);
+
+            const skyUniforms = sky.material.uniforms;
+
+            skyUniforms['turbidity'].value = 10;
+            skyUniforms['rayleigh'].value = 2;
+            skyUniforms['mieCoefficient'].value = 0.005;
+            skyUniforms['mieDirectionalG'].value = 0.8;
+
+            const sunParameters = {
+                elevation: 20,
+                azimuth: 180
+            };
+
+            const phi = THREE.MathUtils.degToRad(90 - sunParameters.elevation);
+            const theta = THREE.MathUtils.degToRad(sunParameters.azimuth);
+
+            sun.position.setFromSphericalCoords(1, phi, theta);
+
+            sky.material.uniforms['sunPosition'].value.copy(sun.position);
+        }
+        createProceduralSky();
 
         // Define road parameters
         const roadWidth = 10;
@@ -86,123 +268,99 @@
         road.position.z = 0; // Centered at z = 0
         scene.add(road);
 
-        // Speech Recognition Setup
-        class SpeechRecognitionManager {
-    constructor() {
-        this.recognition = null;
-        this.subtitleElement = document.getElementById('subtitle');
-        this.lastFinalTranscript = '';
-        this.initializeSpeechRecognition();
-    }
+        // Add highway lines
+        function createHighwayLines() {
+            const lineGroup = new THREE.Group();
+            const lineMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const lineWidth = 0.1;
+            const lineLength = 5;
+            const gapBetweenLines = 5;
+            const numberOfLines = Math.ceil(roadLength / (lineLength + gapBetweenLines));
+            const lanePositions = [-roadWidth / 4, 0, roadWidth / 4];
 
-    limitToSixWords(text) {
-        // Split text into words
-        const words = text.trim().split(/\s+/);
-        
-        // If more than 6 words, take only the last 6
-        if (words.length > 6) {
-            return words.slice(-6).join(' ');
-        }
-        
-        return text;
-    }
-
-    initializeSpeechRecognition() {
-        if ('webkitSpeechRecognition' in window) {
-            this.recognition = new webkitSpeechRecognition();
-            this.recognition.continuous = true;
-            this.recognition.interimResults = true;
-            this.recognition.lang = 'en-US';
-
-            this.recognition.onresult = (event) => {
-                let finalTranscript = '';
-                let interimTranscript = '';
-
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) {
-                        finalTranscript += event.results[i][0].transcript;
-                    } else {
-                        interimTranscript += event.results[i][0].transcript;
-                    }
+            lanePositions.forEach((xPos) => {
+                for (let i = 0; i < numberOfLines; i++) {
+                    const lineGeometry = new THREE.PlaneGeometry(lineWidth, lineLength);
+                    const line = new THREE.Mesh(lineGeometry, lineMaterial);
+                    line.rotation.x = -Math.PI / 2;
+                    line.position.set(xPos, 0.01, -roadLength / 2 + i * (lineLength + gapBetweenLines));
+                    lineGroup.add(line);
                 }
-
-                // Prioritize interim results, strictly limit to 6 words
-                const displayText = this.limitToSixWords(
-                    interimTranscript.trim() || finalTranscript.trim()
-                );
-                
-                if (displayText) {
-                    this.showSubtitle(displayText);
-                }
-
-                // Update last final transcript when a new final result is available
-                if (finalTranscript.trim() && finalTranscript.trim() !== this.lastFinalTranscript.trim()) {
-                    this.lastFinalTranscript = finalTranscript;
-                }
-            };
-
-            this.recognition.onerror = (event) => {
-                console.error('Speech recognition error:', event.error);
-            };
-
-            this.recognition.start();
-        } else {
-            console.warn('Speech recognition not supported');
+            });
+            scene.add(lineGroup);
         }
-    }
+        createHighwayLines();
 
-    showSubtitle(text) {
-        // Clear previous timeout if exists
-        if (this.fadeTimeout) {
-            clearTimeout(this.fadeTimeout);
+        // Add barriers
+        function createBarriers() {
+            const barrierGroup = new THREE.Group();
+            const barrierGeometry = new THREE.BoxGeometry(0.2, 1, 5);
+            const barrierMaterial = new THREE.MeshPhongMaterial({ color: 0x888888 });
+            const numberOfBarriers = Math.ceil(roadLength / 5);
+            const positions = [-roadWidth / 2 - 0.5, roadWidth / 2 + 0.5];
+
+            positions.forEach((xPos) => {
+                for (let i = 0; i < numberOfBarriers; i++) {
+                    const barrier = new THREE.Mesh(barrierGeometry, barrierMaterial);
+                    barrier.position.set(xPos, 0.5, -roadLength / 2 + i * 5);
+                    barrierGroup.add(barrier);
+                }
+            });
+            scene.add(barrierGroup);
         }
+        createBarriers();
 
-        // Set the text and make visible
-        this.subtitleElement.textContent = text;
-        this.subtitleElement.style.opacity = '1';
+        // Loading Screen Elements
+        const loadingScreen = document.getElementById('loading-screen');
+        const mainMenu = document.getElementById('main-menu');
+        const startButton = document.getElementById('start-button');
 
-        // Set a timeout to fade out
-        this.fadeTimeout = setTimeout(() => {
-            this.subtitleElement.style.opacity = '0';
-        }, 3000);
-    }
-}
+        // Show loading screen
+        loadingScreen.style.display = 'flex';
 
-        // Instantiate the speech recognition manager
-        const speechRecognitionManager = new SpeechRecognitionManager();
+        // Create the player car (Porsche model)
+        const fbxLoader = new FBXLoader();
+        let playerCar;
+        let modelLoaded = false;
 
-        // Add lane lines
-        const laneLineMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-        const dashLength = 5;
-        const gapLength = 5;
-        const totalDashLength = dashLength + gapLength;
-        const numberOfDashes = Math.floor(roadLength / totalDashLength);
+        fbxLoader.load(
+            'porsche.fbx', // Adjust path as needed
+            (object) => {
+                playerCar = object;
 
-        const laneLinePositions = [-2.5, 0, 2.5]; // Positions for the lane lines
+                // Adjust scale to match traffic cars
+                playerCar.scale.set(0.02, 0.02, 0.02); // Increased scale
 
-        laneLinePositions.forEach((xPos) => {
-            for (let i = 0; i < numberOfDashes; i++) {
-                const zPos = -roadLength / 2 + i * totalDashLength + dashLength / 2;
-                const lineGeometry = new THREE.BoxGeometry(0.1, 0.01, dashLength);
-                const line = new THREE.Mesh(lineGeometry, laneLineMaterial);
-                line.position.set(xPos, 0.01, zPos);
-                scene.add(line);
+                // Adjust position to sit on the road
+                playerCar.position.set(0, 0.5, 0); // Adjusted Y position
+
+                // Adjust rotation if necessary
+                //playerCar.rotation.y = Math.PI; // Rotate 180 degrees if model faces backward
+
+                scene.add(playerCar);
+                modelLoaded = true;
+
+                // Enable Start button and hide loading screen
+                startButton.disabled = false;
+                loadingScreen.style.display = 'none';
+                mainMenu.style.display = 'flex';
+            },
+            // Progress function
+            (xhr) => {
+                if (xhr.lengthComputable) {
+                    const percentComplete = (xhr.loaded / xhr.total) * 100;
+                    console.log(`Loading model: ${Math.round(percentComplete)}%`);
+                    loadingScreen.textContent = 'Loading... ' + Math.round(percentComplete) + '%';
+                }
+            },
+            // Error function
+            (error) => {
+                console.error('Error loading the Porsche model:', error);
+                loadingScreen.textContent = `Error loading model: ${error.message}. Please check the file path.`;
             }
-        });
+        );
 
-        // Barriers (left and right)
-        const barrierMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
-        const leftBarrier = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1, roadLength), barrierMaterial);
-        const rightBarrier = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1, roadLength), barrierMaterial);
-
-        leftBarrier.position.set(-roadWidth / 2 - 0.25, 0.5, 0);
-        rightBarrier.position.set(roadWidth / 2 + 0.25, 0.5, 0);
-        scene.add(leftBarrier, rightBarrier);
-
-        // Lane positions for cars
-        const lanePositions = [-3.75, -1.25, 1.25, 3.75]; // Centers of the four lanes
-
-        // Function to create a car
+        // Create the cop car
         function createCar(color) {
             const carGroup = new THREE.Group();
 
@@ -231,31 +389,91 @@
             return carGroup;
         }
 
-        // Create the player car
-        const playerCar = createCar(0xff0000);
-        playerCar.position.set(0, 0.5, 0); // Start at z = 0
-        scene.add(playerCar);
-
-        // Create the cop car
         const copCar = createCar(0x0000ff); // Blue cop car
-        copCar.position.set(0, 0.5, -12); // Start behind the player
+        copCar.position.set(0, 0.5, -15); // Start closer behind the player
         scene.add(copCar);
+
+        // Add siren light to the cop car
+        const siren = new THREE.Mesh(
+            new THREE.BoxGeometry(0.6, 0.2, 0.2),
+            new THREE.MeshBasicMaterial({ color: 0x000000 })
+        );
+        siren.position.set(0, 1, 0);
+        copCar.add(siren);
 
         // Create trees on the sides
         const trees = [];
-        const treeGeometry = new THREE.CylinderGeometry(0, 0.5, 1.5, 8);
+        const treeGeometry = new THREE.ConeGeometry(0.5, 2, 8);
+        const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.2, 1, 8);
         const treeMaterial = new THREE.MeshPhongMaterial({ color: 0x228b22 }); // Green color
+        const trunkMaterial = new THREE.MeshPhongMaterial({ color: 0x8b4513 }); // Brown color
 
-        for (let i = 0; i < 200; i++) {
-            const tree = new THREE.Mesh(treeGeometry, treeMaterial);
+        for (let i = 0; i < 500; i++) {
+            const tree = new THREE.Group();
+
+            const leaves = new THREE.Mesh(treeGeometry, treeMaterial);
+            leaves.position.y = 1.5;
+            tree.add(leaves);
+
+            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+            trunk.position.y = 0.5;
+            tree.add(trunk);
+
             tree.position.set(
-                Math.random() > 0.5 ? roadWidth / 2 + 1 + Math.random() * 5 : -roadWidth / 2 - 1 - Math.random() * 5,
-                0.75,
+                Math.random() > 0.5 ? roadWidth / 2 + 2 + Math.random() * 10 : -roadWidth / 2 - 2 - Math.random() * 10,
+                0,
                 -roadLength / 2 + Math.random() * roadLength
             );
             trees.push(tree);
             scene.add(tree);
         }
+
+        // Add distant mountains
+        function createMountains() {
+            const mountainGeometry = new THREE.ConeGeometry(50, 100, 32);
+            const mountainMaterial = new THREE.MeshPhongMaterial({ color: 0x808080 });
+            const mountainLeft = new THREE.Mesh(mountainGeometry, mountainMaterial);
+            const mountainRight = new THREE.Mesh(mountainGeometry, mountainMaterial);
+
+            mountainLeft.position.set(-100, -50, -200);
+            mountainRight.position.set(100, -50, -200);
+
+            scene.add(mountainLeft, mountainRight);
+        }
+        createMountains();
+
+        // Add clouds
+        function createClouds() {
+            const cloudGeometry = new THREE.SphereGeometry(5, 32, 32);
+            const cloudMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
+            for (let i = 0; i < 50; i++) {
+                const cloud = new THREE.Group();
+
+                const puff1 = new THREE.Mesh(cloudGeometry, cloudMaterial);
+                const puff2 = new THREE.Mesh(cloudGeometry, cloudMaterial);
+                const puff3 = new THREE.Mesh(cloudGeometry, cloudMaterial);
+
+                puff1.position.set(-2, 0, 0);
+                puff2.position.set(2, 0, 0);
+                puff3.position.set(0, 1.5, 0);
+
+                cloud.add(puff1);
+                cloud.add(puff2);
+                cloud.add(puff3);
+
+                cloud.scale.setScalar(1 + Math.random() * 2);
+                cloud.position.set(
+                    -200 + Math.random() * 400,
+                    30 + Math.random() * 20,
+                    -1000 + Math.random() * 2000
+                );
+                scene.add(cloud);
+            }
+        }
+        createClouds();
+
+        // Lane positions for cars
+        const lanePositions = [-3.75, -1.25, 1.25, 3.75]; // Centers of the four lanes
 
         // Traffic cars
         const trafficCars = [];
@@ -289,11 +507,10 @@
         // Update score
         const scoreboard = document.getElementById('scoreboard');
 
-        // Variables for smoke and tilt
-        let currentTiltAngle = 0;
-        const maxTiltAngle = Math.PI / 6;
-        const tiltSpeed = 0.02;
-        const smokeParticles = [];
+        // Variables for smoke and rotation
+        let currentRotationAngle = 0;
+        const maxRotationAngle = Math.PI / 8; // Maximum rotation angle (approx 22.5 degrees)
+        const rotationSpeed = 0.05; // How fast the car rotates
 
         // Smoke particle creation
         function createSmokeParticle(scene) {
@@ -319,14 +536,18 @@
 
         // Update player car based on keys
         function handleInput() {
+            if (!playerCar) {
+                setTimeout(handleInput, 16);
+                return;
+            }
+
             // Smoke effect for left movement
             if (keys['ArrowLeft']) {
                 playerCar.position.x += 0.15; // Move left
                 
-                // Tilt mechanics
-                currentTiltAngle = Math.min(currentTiltAngle + tiltSpeed, maxTiltAngle);
-                playerCar.rotation.z = -currentTiltAngle;
-                playerCar.rotation.y = -currentTiltAngle / 2;
+                // Rotation mechanics
+                currentRotationAngle = Math.min(currentRotationAngle + rotationSpeed, maxRotationAngle);
+                playerCar.rotation.y = currentRotationAngle;
 
                 // Create smoke particles from rear wheels
                 const smokeLeft = createSmokeParticle(scene);
@@ -345,10 +566,9 @@
             else if (keys['ArrowRight']) {
                 playerCar.position.x -= 0.15; // Move right
                 
-                // Tilt mechanics
-                currentTiltAngle = Math.min(currentTiltAngle + tiltSpeed, maxTiltAngle);
-                playerCar.rotation.z = currentTiltAngle;
-                playerCar.rotation.y = currentTiltAngle / 2;
+                // Rotation mechanics
+                currentRotationAngle = Math.max(currentRotationAngle - rotationSpeed, -maxRotationAngle);
+                playerCar.rotation.y = currentRotationAngle;
 
                 // Create smoke particles from rear wheels
                 const smokeLeft = createSmokeParticle(scene);
@@ -363,13 +583,14 @@
 
                 smokeParticles.push(smokeLeft, smokeRight);
             }
-            // Reset position when no movement
+            // Reset rotation when no movement
             else {
-                if (currentTiltAngle > 0) {
-                    currentTiltAngle = Math.max(currentTiltAngle - tiltSpeed, 0);
-                    playerCar.rotation.z = 0;
-                    playerCar.rotation.y = 0;
+                if (currentRotationAngle > 0) {
+                    currentRotationAngle = Math.max(currentRotationAngle - rotationSpeed, 0);
+                } else if (currentRotationAngle < 0) {
+                    currentRotationAngle = Math.min(currentRotationAngle + rotationSpeed, 0);
                 }
+                playerCar.rotation.y = currentRotationAngle;
             }
 
             // Manage smoke particles
@@ -406,11 +627,13 @@
 
             setTimeout(handleInput, 16);
         }
-        handleInput();
+
+        // Array to hold smoke particles
+        const smokeParticles = [];
 
         // Animation loop
         function animate() {
-            if (gameOver) return;
+            if (gameOver || !playerCar) return;
 
             requestAnimationFrame(animate);
 
@@ -436,7 +659,7 @@
                     trafficCar.position.z = playerCar.position.z + 1000 + Math.random() * 500;
                     const lane = lanePositions[Math.floor(Math.random() * lanePositions.length)];
                     trafficCar.position.x = lane;
-                    trafficCar.userData.speed = 0.2 + Math.random() * 0.1; // Random speed between 0.4 and 0.8
+                    trafficCar.userData.speed = 0.2 + Math.random() * 0.1; // Random speed between 0.2 and 0.3
                 }
 
                 // Collision detection with traffic cars
@@ -475,7 +698,97 @@
             renderer.render(scene, camera);
         }
 
-        animate();
+        // Start the game when "Start" button is clicked
+        document.getElementById('start-button').addEventListener('click', () => {
+            if (!modelLoaded) {
+                alert('The car model is still loading. Please wait a moment.');
+                return;
+            }
+            document.getElementById('main-menu').style.display = 'none';
+            startIntroAnimation();
+        });
+
+        // Settings button (no functionality added yet)
+        document.getElementById('settings-button').addEventListener('click', () => {
+            alert('Settings will be available soon!');
+        });
+
+        // Add siren flashing effect
+        let sirenOn = false;
+        function toggleSiren() {
+            sirenOn = !sirenOn;
+            siren.material.color.set(sirenOn ? 0xff0000 : 0x000000);
+        }
+
+        // Intro animation sequence
+        function startIntroAnimation() {
+            // Initial camera position (behind the player)
+            camera.position.set(playerCar.position.x, 5, playerCar.position.z - 10);
+            camera.lookAt(playerCar.position);
+
+            // Create a timeline for the intro animation
+            const introTimeline = gsap.timeline({ onComplete: () => {
+                // Start the game loop and input handling after the intro
+                animate();
+                handleInput();
+            }});
+
+            // Flip around to show the cop car
+            introTimeline.to(camera.position, {
+                x: copCar.position.x,
+                y: 5,
+                z: copCar.position.z - 5,
+                duration: 2,
+                ease: "power2.inOut",
+                onUpdate: function() {
+                    camera.lookAt(copCar.position);
+                },
+                onComplete: function() {
+                    // Start siren flashing
+                    sirenInterval = setInterval(toggleSiren, 200);
+                }
+            });
+
+            // Hold on the cop car for a moment
+            introTimeline.to({}, { duration: 1 });
+
+            // Cop car starts to move towards the player
+            introTimeline.to(copCar.position, {
+                z: copCar.position.z + 5, // Move forward a bit
+                duration: 2,
+                ease: "power2.inOut",
+                onUpdate: function() {
+                    camera.lookAt(copCar.position);
+                }
+            }, "-=1"); // Overlap with previous hold
+
+            // Pan back to the player car
+            introTimeline.to(camera.position, {
+                x: playerCar.position.x,
+                y: 5,
+                z: playerCar.position.z - 10,
+                duration: 2,
+                ease: "power2.inOut",
+                onUpdate: function() {
+                    camera.lookAt(playerCar.position);
+                },
+                onComplete: function() {
+                    // Stop siren flashing
+                    clearInterval(sirenInterval);
+                    siren.material.color.set(0x000000);
+                }
+            });
+
+            // Start rendering during the intro
+            function renderIntro() {
+                renderer.render(scene, camera);
+                if (!gameOver) requestAnimationFrame(renderIntro);
+            }
+            renderIntro();
+        }
+
+        // Variable to hold the siren interval
+        let sirenInterval;
     </script>
 </body>
 </html>
