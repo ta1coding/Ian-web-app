@@ -22,6 +22,27 @@
             border-radius: 5px;
             font-family: Arial, sans-serif;
         }
+        #subtitle {
+            position: absolute;
+        top: 20px;
+        left: 50%; /* Centered */
+        transform: translateX(-40%); /* Slightly offset to the left of center */
+        color: black;
+        font-family: Arial, sans-serif;
+        font-size: 48px;
+        font-weight: bold;
+        text-align: left;
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+        pointer-events: none;
+        text-shadow: 
+            -2px -2px 0 white,
+            2px -2px 0 white,
+            -2px 2px 0 white,
+            2px 2px 0 white;
+        width: 80%; /* Allow width for multiple lines */
+        line-height: 1.2; /* Improve line spacing */
+        }
     </style>
 </head>
 <body>
@@ -29,6 +50,7 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
     <div id="scoreboard">Score: 0</div>
+    <div id="subtitle"></div>
     <script>
         // Set up the scene, camera, and renderer
         const scene = new THREE.Scene();
@@ -64,6 +86,91 @@
         road.position.z = 0; // Centered at z = 0
         scene.add(road);
 
+        // Speech Recognition Setup
+        class SpeechRecognitionManager {
+    constructor() {
+        this.recognition = null;
+        this.subtitleElement = document.getElementById('subtitle');
+        this.lastFinalTranscript = '';
+        this.initializeSpeechRecognition();
+    }
+
+    limitToSixWords(text) {
+        // Split text into words
+        const words = text.trim().split(/\s+/);
+        
+        // If more than 6 words, take only the last 6
+        if (words.length > 6) {
+            return words.slice(-6).join(' ');
+        }
+        
+        return text;
+    }
+
+    initializeSpeechRecognition() {
+        if ('webkitSpeechRecognition' in window) {
+            this.recognition = new webkitSpeechRecognition();
+            this.recognition.continuous = true;
+            this.recognition.interimResults = true;
+            this.recognition.lang = 'en-US';
+
+            this.recognition.onresult = (event) => {
+                let finalTranscript = '';
+                let interimTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+
+                // Prioritize interim results, strictly limit to 6 words
+                const displayText = this.limitToSixWords(
+                    interimTranscript.trim() || finalTranscript.trim()
+                );
+                
+                if (displayText) {
+                    this.showSubtitle(displayText);
+                }
+
+                // Update last final transcript when a new final result is available
+                if (finalTranscript.trim() && finalTranscript.trim() !== this.lastFinalTranscript.trim()) {
+                    this.lastFinalTranscript = finalTranscript;
+                }
+            };
+
+            this.recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+            };
+
+            this.recognition.start();
+        } else {
+            console.warn('Speech recognition not supported');
+        }
+    }
+
+    showSubtitle(text) {
+        // Clear previous timeout if exists
+        if (this.fadeTimeout) {
+            clearTimeout(this.fadeTimeout);
+        }
+
+        // Set the text and make visible
+        this.subtitleElement.textContent = text;
+        this.subtitleElement.style.opacity = '1';
+
+        // Set a timeout to fade out
+        this.fadeTimeout = setTimeout(() => {
+            this.subtitleElement.style.opacity = '0';
+        }, 3000);
+    }
+}
+
+        // Instantiate the speech recognition manager
+        const speechRecognitionManager = new SpeechRecognitionManager();
+
         // Add lane lines
         const laneLineMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
         const dashLength = 5;
@@ -95,32 +202,6 @@
         // Lane positions for cars
         const lanePositions = [-3.75, -1.25, 1.25, 3.75]; // Centers of the four lanes
 
-        // Create the player car
-        const playerCar = createCar(0xff0000);
-        playerCar.position.set(0, 0.5, 0); // Start at z = 0
-        scene.add(playerCar);
-
-        // Create the cop car
-        const copCar = createCar(0x0000ff); // Blue cop car
-        copCar.position.set(0, 0.5, -5); // Start behind the player
-        scene.add(copCar);
-
-        // Create trees on the sides
-        const trees = [];
-        const treeGeometry = new THREE.CylinderGeometry(0, 0.5, 1.5, 8);
-        const treeMaterial = new THREE.MeshPhongMaterial({ color: 0x228b22 }); // Green color
-
-        for (let i = 0; i < 200; i++) {
-            const tree = new THREE.Mesh(treeGeometry, treeMaterial);
-            tree.position.set(
-                Math.random() > 0.5 ? roadWidth / 2 + 1 + Math.random() * 5 : -roadWidth / 2 - 1 - Math.random() * 5,
-                0.75,
-                -roadLength / 2 + Math.random() * roadLength
-            );
-            trees.push(tree);
-            scene.add(tree);
-        }
-
         // Function to create a car
         function createCar(color) {
             const carGroup = new THREE.Group();
@@ -150,6 +231,32 @@
             return carGroup;
         }
 
+        // Create the player car
+        const playerCar = createCar(0xff0000);
+        playerCar.position.set(0, 0.5, 0); // Start at z = 0
+        scene.add(playerCar);
+
+        // Create the cop car
+        const copCar = createCar(0x0000ff); // Blue cop car
+        copCar.position.set(0, 0.5, -12); // Start behind the player
+        scene.add(copCar);
+
+        // Create trees on the sides
+        const trees = [];
+        const treeGeometry = new THREE.CylinderGeometry(0, 0.5, 1.5, 8);
+        const treeMaterial = new THREE.MeshPhongMaterial({ color: 0x228b22 }); // Green color
+
+        for (let i = 0; i < 200; i++) {
+            const tree = new THREE.Mesh(treeGeometry, treeMaterial);
+            tree.position.set(
+                Math.random() > 0.5 ? roadWidth / 2 + 1 + Math.random() * 5 : -roadWidth / 2 - 1 - Math.random() * 5,
+                0.75,
+                -roadLength / 2 + Math.random() * roadLength
+            );
+            trees.push(tree);
+            scene.add(tree);
+        }
+
         // Traffic cars
         const trafficCars = [];
         const trafficCarCount = 100; // Number of traffic cars
@@ -163,7 +270,7 @@
                 0.5,
                 initialZ
             );
-            trafficCar.userData.speed = -0.1 - Math.random() * 0.2; // Random speed between 0.4 and 0.8
+            trafficCar.userData.speed = 0.1 + Math.random() * 0.3; // Positive speed
             trafficCars.push(trafficCar);
             scene.add(trafficCar);
         }
@@ -181,6 +288,125 @@
 
         // Update score
         const scoreboard = document.getElementById('scoreboard');
+
+        // Variables for smoke and tilt
+        let currentTiltAngle = 0;
+        const maxTiltAngle = Math.PI / 6;
+        const tiltSpeed = 0.02;
+        const smokeParticles = [];
+
+        // Smoke particle creation
+        function createSmokeParticle(scene) {
+            const geometry = new THREE.SphereGeometry(0.1, 8, 8);
+            const material = new THREE.MeshBasicMaterial({ 
+                color: 0xcccccc, 
+                transparent: true, 
+                opacity: 0.5 
+            });
+            const smoke = new THREE.Mesh(geometry, material);
+            scene.add(smoke);
+            return smoke;
+        }
+
+        // Handle keyboard input
+        const keys = {};
+        document.addEventListener('keydown', (event) => {
+            keys[event.key] = true;
+        });
+        document.addEventListener('keyup', (event) => {
+            keys[event.key] = false;
+        });
+
+        // Update player car based on keys
+        function handleInput() {
+            // Smoke effect for left movement
+            if (keys['ArrowLeft']) {
+                playerCar.position.x += 0.15; // Move left
+                
+                // Tilt mechanics
+                currentTiltAngle = Math.min(currentTiltAngle + tiltSpeed, maxTiltAngle);
+                playerCar.rotation.z = -currentTiltAngle;
+                playerCar.rotation.y = -currentTiltAngle / 2;
+
+                // Create smoke particles from rear wheels
+                const smokeLeft = createSmokeParticle(scene);
+                smokeLeft.position.copy(playerCar.position);
+                smokeLeft.position.x -= 0.7; // Left rear wheel position
+                smokeLeft.position.z -= 1.3;
+                
+                const smokeRight = createSmokeParticle(scene);
+                smokeRight.position.copy(playerCar.position);
+                smokeRight.position.x += 0.7; // Right rear wheel position
+                smokeRight.position.z -= 1.3;
+
+                smokeParticles.push(smokeLeft, smokeRight);
+            }
+            // Smoke effect for right movement
+            else if (keys['ArrowRight']) {
+                playerCar.position.x -= 0.15; // Move right
+                
+                // Tilt mechanics
+                currentTiltAngle = Math.min(currentTiltAngle + tiltSpeed, maxTiltAngle);
+                playerCar.rotation.z = currentTiltAngle;
+                playerCar.rotation.y = currentTiltAngle / 2;
+
+                // Create smoke particles from rear wheels
+                const smokeLeft = createSmokeParticle(scene);
+                smokeLeft.position.copy(playerCar.position);
+                smokeLeft.position.x -= 0.7; // Left rear wheel position
+                smokeLeft.position.z -= 1.3;
+                
+                const smokeRight = createSmokeParticle(scene);
+                smokeRight.position.copy(playerCar.position);
+                smokeRight.position.x += 0.7; // Right rear wheel position
+                smokeRight.position.z -= 1.3;
+
+                smokeParticles.push(smokeLeft, smokeRight);
+            }
+            // Reset position when no movement
+            else {
+                if (currentTiltAngle > 0) {
+                    currentTiltAngle = Math.max(currentTiltAngle - tiltSpeed, 0);
+                    playerCar.rotation.z = 0;
+                    playerCar.rotation.y = 0;
+                }
+            }
+
+            // Manage smoke particles
+            smokeParticles.forEach((smoke, index) => {
+                smoke.scale.multiplyScalar(1.1); // Grow smoke
+                smoke.material.opacity -= 0.05; // Fade out
+                
+                // Remove smoke if too transparent
+                if (smoke.material.opacity <= 0) {
+                    scene.remove(smoke);
+                    smokeParticles.splice(index, 1);
+                }
+            });
+
+            // Existing movement and speed logic
+            if (keys['ArrowUp']) {
+                playerSpeed = Math.min(playerSpeed + acceleration, maxSpeed);
+            } else if (keys['ArrowDown']) {
+                playerSpeed = Math.max(playerSpeed - acceleration, -maxSpeed / 2);
+            } else {
+                if (playerSpeed > 0) {
+                    playerSpeed = Math.max(playerSpeed - deceleration, 0);
+                } else if (playerSpeed < 0) {
+                    playerSpeed = Math.min(playerSpeed + deceleration, 0);
+                }
+            }
+
+            // Update player car position
+            playerCar.position.z += playerSpeed;
+
+            // Enforce road boundaries immediately after movement
+            if (playerCar.position.x < -roadWidth / 2 + 0.75) playerCar.position.x = -roadWidth / 2 + 0.75;
+            if (playerCar.position.x > roadWidth / 2 - 0.75) playerCar.position.x = roadWidth / 2 - 0.75;
+
+            setTimeout(handleInput, 16);
+        }
+        handleInput();
 
         // Animation loop
         function animate() {
@@ -203,14 +429,14 @@
             // Move traffic cars
             trafficCars.forEach((trafficCar) => {
                 // Move traffic cars along z
-                trafficCar.position.z -= trafficCar.userData.speed;
+                trafficCar.position.z += trafficCar.userData.speed;
 
                 // If traffic car goes behind the player, reset position ahead
                 if (trafficCar.position.z < playerCar.position.z - 100) {
                     trafficCar.position.z = playerCar.position.z + 1000 + Math.random() * 500;
                     const lane = lanePositions[Math.floor(Math.random() * lanePositions.length)];
                     trafficCar.position.x = lane;
-                    trafficCar.userData.speed = 0.4 + Math.random() * 0.4; // Random speed between 0.4 and 0.8
+                    trafficCar.userData.speed = 0.2 + Math.random() * 0.1; // Random speed between 0.4 and 0.8
                 }
 
                 // Collision detection with traffic cars
@@ -238,10 +464,6 @@
                 }
             });
 
-            // Enforce road boundaries
-            if (playerCar.position.x < -roadWidth / 2 + 0.75) playerCar.position.x = -roadWidth / 2 + 0.75;
-            if (playerCar.position.x > roadWidth / 2 - 0.75) playerCar.position.x = roadWidth / 2 - 0.75;
-
             // Update camera position to follow the player
             camera.position.set(playerCar.position.x, 5, playerCar.position.z - 10);
             camera.lookAt(playerCar.position);
@@ -254,144 +476,6 @@
         }
 
         animate();
-
-        // Handle keyboard input
-        const keys = {};
-        document.addEventListener('keydown', (event) => {
-            keys[event.key] = true;
-        });
-        document.addEventListener('keyup', (event) => {
-            keys[event.key] = false;
-        });
-
-        // Update player car based on keys
-
-        function createTireSmoke(scene, car) {
-    const smokeGeometry = new THREE.SphereGeometry(0.1, 8, 8);
-    const smokeMaterial = new THREE.MeshBasicMaterial({ 
-        color: 0xcccccc, 
-        transparent: true, 
-        opacity: 0.5 
-    });
-    
-    // Create smoke for each tire
-    const tireSmokes = [];
-    const tirePositions = [
-        { x: -0.7, z: 1.3 },   // Front-left tire
-        { x: 0.7, z: 1.3 },    // Front-right tire
-        { x: -0.7, z: -1.3 },  // Back-left tire
-        { x: 0.7, z: -1.3 }    // Back-right tire
-    ];
-
-    tirePositions.forEach(pos => {
-        const smoke = new THREE.Mesh(smokeGeometry, smokeMaterial);
-        smoke.position.copy(car.position);
-        smoke.position.x += pos.x;
-        smoke.position.z += pos.z;
-        scene.add(smoke);
-        tireSmokes.push(smoke);
-    });
-
-    return tireSmokes;
-}
-
-function updateTireSmoke(scene, car, smokeParticles, isMoving) {
-    // Remove existing smoke particles
-    smokeParticles.forEach(particle => scene.remove(particle));
-    smokeParticles.length = 0;
-
-    if (isMoving) {
-        const newSmokeClouds = createTireSmoke(scene, car);
-        
-        newSmokeClouds.forEach(smoke => {
-            // Randomize smoke spread and growth
-            smoke.scale.set(
-                1 + Math.random() * 0.5, 
-                1 + Math.random() * 0.5, 
-                1 + Math.random() * 0.5
-            );
-            
-            // Fade out and grow effect
-            gsap.to(smoke.scale, {
-                x: 2,
-                y: 2,
-                z: 2,
-                duration: 0.5
-            });
-            
-            gsap.to(smoke.material, {
-                opacity: 0,
-                duration: 0.5,
-                onComplete: () => {
-                    scene.remove(smoke);
-                }
-            });
-            
-            smokeParticles.push(smoke);
-        });
-    }
-}
-function handleInput() {
-    let currentTiltAngle = 0;
-    const maxTiltAngle = Math.PI / 6;
-    const tiltSpeed = 0.02;
-    const smokeParticles = [];
-
-    let isDrifting = false;
-
-    // Move left/right with gradual tilt
-    if (keys['ArrowLeft']) {
-        playerCar.position.x += 0.15;
-        currentTiltAngle = Math.min(currentTiltAngle + tiltSpeed, maxTiltAngle);
-        playerCar.rotation.z = -currentTiltAngle;
-        playerCar.rotation.y = -currentTiltAngle / 2;
-        isDrifting = true;
-    }
-    if (keys['ArrowRight']) {
-        playerCar.position.x -= 0.15;
-        currentTiltAngle = Math.min(currentTiltAngle + tiltSpeed, maxTiltAngle);
-        playerCar.rotation.z = currentTiltAngle;
-        playerCar.rotation.y = currentTiltAngle / 2;
-        isDrifting = true;
-    }
-
-    // Update tire smoke
-    updateTireSmoke(scene, playerCar, smokeParticles, isDrifting);
-
-    // Smooth return to no tilt
-    if (!keys['ArrowLeft'] && !keys['ArrowRight']) {
-        if (currentTiltAngle > 0) {
-            currentTiltAngle = Math.max(currentTiltAngle - tiltSpeed, 0);
-            playerCar.rotation.z = currentTiltAngle;
-            playerCar.rotation.y = 0;
-        }
-    }
-
-    // Rest of the existing movement logic remains the same
-    // ... (previous forward/backward movement code)
-    if (playerCar.position.x < -roadWidth / 2 + 0.75) playerCar.position.x = -roadWidth / 2 + 0.75;
-    if (playerCar.position.x > roadWidth / 2 - 0.75) playerCar.position.x = roadWidth / 2 - 0.75;
-
-    // Move forward/backward with acceleration/deceleration
-    if (keys['ArrowUp']) {
-        playerSpeed = Math.min(playerSpeed + acceleration, maxSpeed);
-    } else if (keys['ArrowDown']) {
-        playerSpeed = Math.max(playerSpeed - acceleration, -maxSpeed / 2); // Allow reverse
-    } else {
-        // No key pressed, decelerate to 0
-        if (playerSpeed > 0) {
-            playerSpeed = Math.max(playerSpeed - deceleration, 0);
-        } else if (playerSpeed < 0) {
-            playerSpeed = Math.min(playerSpeed + deceleration, 0);
-        }
-    }
-
-    // Update player car position
-    playerCar.position.z += playerSpeed;
-
-    setTimeout(handleInput, 16);
-}
-        handleInput();
     </script>
 </body>
 </html>
