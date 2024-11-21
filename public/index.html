@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>Escape the Cop</title>
     <style>
-        /* Your existing CSS code */
         body {
             margin: 0;
             overflow: hidden;
@@ -260,12 +259,12 @@
         sunLight.position.set(-50, 100, -50);
         scene.add(sunLight);
 
-        // Sun object for visual representation in the top left corner
-        const sunGeometry = new THREE.CircleGeometry(5, 32);
-        const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffddaa });
-        const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
-        sunMesh.position.set(-30, 50, -100);
-        sunMesh.rotation.y = Math.PI / 2; // Face the camera
+        // Sun object for visual representation
+        const sunMesh = new THREE.Mesh(
+            new THREE.CircleGeometry(20, 32),
+            new THREE.MeshBasicMaterial({ color: 0xffddaa, side: THREE.DoubleSide })
+        );
+        sunMesh.position.set(-100, 100, -100);
         scene.add(sunMesh);
 
         // Optional: Add a procedural sky
@@ -468,15 +467,10 @@
         }
 
         // Add mountain on the left side
-        function createMountain() {
-            const mountainGeometry = new THREE.ConeGeometry(50, 100, 32);
-            const mountainMaterial = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
-            const mountain = new THREE.Mesh(mountainGeometry, mountainMaterial);
-
-            mountain.position.set(-100, -50, -200);
-            scene.add(mountain);
-        }
-        createMountain();
+        const mountainGeometry = new THREE.ConeGeometry(50, 100, 32);
+        const mountainMaterial = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
+        const mountain = new THREE.Mesh(mountainGeometry, mountainMaterial);
+        scene.add(mountain);
 
         // Infinite Clouds
         const cloudGeometry = new THREE.SphereGeometry(5, 32, 32);
@@ -517,22 +511,140 @@
         // Lane positions for cars
         const lanePositions = [-3.75, -1.25, 1.25, 3.75]; // Centers of the four lanes
 
-        // Traffic cars
+        // Traffic Car Class
+        class TrafficCar {
+            constructor() {
+                this.mesh = createCar(0x00ff00); // Green traffic car
+                this.lane = lanePositions[Math.floor(Math.random() * lanePositions.length)];
+                this.mesh.position.set(
+                    this.lane,
+                    0.5,
+                    playerCar ? playerCar.position.z + 500 + Math.random() * 1000 : Math.random() * 1000 + 50
+                );
+                this.speed = 0.1 + Math.random() * 0.3; // Random speed between 0.2 and 0.4
+                this.targetLane = this.lane;
+                this.laneChangeCooldown = 0; // Cooldown before next lane change
+                this.turnSignal = null; // Direction of turn signal ('left' or 'right')
+                scene.add(this.mesh);
+            }
+
+            update(deltaTime) {
+                // Move forward
+                this.mesh.position.z += this.speed * deltaTime;
+
+                // Lane changing logic
+                if (this.laneChangeCooldown <= 0 && Math.random() < 0.005) {
+                    // Decide to change lanes
+                    const currentLaneIndex = lanePositions.indexOf(this.lane);
+                    const direction = Math.random() < 0.5 ? -1 : 1; // -1 for left, 1 for right
+                    const newLaneIndex = currentLaneIndex + direction;
+                    if (newLaneIndex >= 0 && newLaneIndex < lanePositions.length) {
+                        this.targetLane = lanePositions[newLaneIndex];
+                        this.turnSignal = direction === -1 ? 'left' : 'right';
+                        this.laneChangeCooldown = 200; // Cooldown before next lane change
+                    }
+                }
+
+                // Apply lane change
+                if (this.lane !== this.targetLane) {
+                    const laneDiff = this.targetLane - this.lane;
+                    const shift = Math.sign(laneDiff) * 0.05 * deltaTime;
+                    this.mesh.position.x += shift;
+                    this.lane += shift;
+                    if (Math.abs(this.lane - this.targetLane) < 0.1) {
+                        this.lane = this.targetLane;
+                        this.mesh.position.x = this.targetLane;
+                        this.turnSignal = null; // Turn off signal after lane change
+                    }
+                } else {
+                    this.turnSignal = null;
+                }
+
+                // Update turn signals
+                this.updateTurnSignals();
+
+                // Reduce cooldown
+                if (this.laneChangeCooldown > 0) {
+                    this.laneChangeCooldown -= deltaTime;
+                }
+
+                // Collision avoidance with other traffic cars
+                trafficCars.forEach((otherCar) => {
+                    if (otherCar !== this) {
+                        const distance = this.mesh.position.distanceTo(otherCar.mesh.position);
+                        if (distance < 5 && this.mesh.position.z > otherCar.mesh.position.z) {
+                            // Slow down to avoid collision
+                            this.speed = Math.max(this.speed - 0.01 * deltaTime, 0.1);
+                        }
+                    }
+                });
+
+                // Avoid collision with the player car
+                const distanceToPlayer = this.mesh.position.distanceTo(playerCar.position);
+                if (this.mesh.position.z < playerCar.position.z && distanceToPlayer < 10) {
+                    // Player is in front, adjust speed
+                    if (distanceToPlayer < 5) {
+                        // Slow down more aggressively if very close
+                        this.speed = Math.max(this.speed - 0.05 * deltaTime, 0);
+                    } else {
+                        this.speed = Math.max(this.speed - 0.02 * deltaTime, 0.1);
+                    }
+                } else {
+                    // Speed up if not near the player
+                    this.speed = Math.min(this.speed + 0.01 * deltaTime, 0.4);
+                }
+
+                // Reset position if behind player
+                if (this.mesh.position.z > playerCar.position.z + 200) {
+                    this.mesh.position.z = playerCar.position.z - 1000 - Math.random() * 500;
+                    this.lane = lanePositions[Math.floor(Math.random() * lanePositions.length)];
+                    this.targetLane = this.lane;
+                    this.mesh.position.x = this.lane;
+                    this.speed = 0.2 + Math.random() * 0.2;
+                }
+            }
+
+            updateTurnSignals() {
+                if (!this.turnSignal) {
+                    // Remove existing signals
+                    if (this.leftSignal) {
+                        this.mesh.remove(this.leftSignal);
+                        this.leftSignal = null;
+                    }
+                    if (this.rightSignal) {
+                        this.mesh.remove(this.rightSignal);
+                        this.rightSignal = null;
+                    }
+                    return;
+                }
+
+                const signalColor = 0xffff00; // Yellow color for turn signals
+                const signalGeometry = new THREE.BoxGeometry(0.2, 0.2, 0.1);
+                const signalMaterial = new THREE.MeshBasicMaterial({ color: signalColor });
+
+                if (this.turnSignal === 'left') {
+                    if (!this.leftSignal) {
+                        this.leftSignal = new THREE.Mesh(signalGeometry, signalMaterial);
+                        this.leftSignal.position.set(-0.8, 0.5, -1.5);
+                        this.mesh.add(this.leftSignal);
+                    }
+                } else if (this.turnSignal === 'right') {
+                    if (!this.rightSignal) {
+                        this.rightSignal = new THREE.Mesh(signalGeometry, signalMaterial);
+                        this.rightSignal.position.set(0.8, 0.5, -1.5);
+                        this.mesh.add(this.rightSignal);
+                    }
+                }
+            }
+        }
+
+        // Create traffic cars
         const trafficCars = [];
-        const trafficCarCount = 100; // Number of traffic cars
+        const trafficCarCount = 30; // Reduced number of traffic cars for better performance
 
         for (let i = 0; i < trafficCarCount; i++) {
-            const trafficCar = createCar(0x00ff00); // Green traffic cars
-            const lane = lanePositions[Math.floor(Math.random() * lanePositions.length)];
-            const initialZ = Math.random() * 1000 + 50; // Positions ahead of the player
-            trafficCar.position.set(
-                lane, // Stay in a lane
-                0.5,
-                initialZ
-            );
-            trafficCar.userData.speed = 0.1 + Math.random() * 0.3; // Positive speed
+            const trafficCar = new TrafficCar();
             trafficCars.push(trafficCar);
-            scene.add(trafficCar);
         }
 
         // Variables
@@ -766,6 +878,9 @@
 
             requestAnimationFrame(animate);
 
+            let currentTime = performance.now();
+            const deltaTime = 1; // You can adjust this value or calculate actual deltaTime if needed
+
             // Increase cop car speed gradually up to its max speed
             if (copCurrentSpeed < copMaxSpeed) {
                 copCurrentSpeed += copAcceleration;
@@ -778,23 +893,14 @@
             copDirection.subVectors(playerCar.position, copCar.position).normalize();
             copCar.position.addScaledVector(copDirection, copCurrentSpeed);
 
-            // Move traffic cars
+            // Update traffic cars
             trafficCars.forEach((trafficCar) => {
-                // Move traffic cars along z
-                trafficCar.position.z += trafficCar.userData.speed;
+                trafficCar.update(deltaTime);
 
-                // If traffic car goes behind the player, reset position ahead
-                if (trafficCar.position.z < playerCar.position.z - 100) {
-                    trafficCar.position.z = playerCar.position.z + 1000 + Math.random() * 500;
-                    const lane = lanePositions[Math.floor(Math.random() * lanePositions.length)];
-                    trafficCar.position.x = lane;
-                    trafficCar.userData.speed = 0.2 + Math.random() * 0.1; // Random speed between 0.2 and 0.3
-                }
-
-                // Collision detection with traffic cars
+                // Collision detection with player car
                 if (
-                    Math.abs(playerCar.position.x - trafficCar.position.x) < 1.2 &&
-                    Math.abs(playerCar.position.z - trafficCar.position.z) < 4
+                    Math.abs(playerCar.position.x - trafficCar.mesh.position.x) < 1.2 &&
+                    Math.abs(playerCar.position.z - trafficCar.mesh.position.z) < 4
                 ) {
                     gameOver = true;
                     alert('You crashed into a car! Game Over!');
@@ -844,6 +950,22 @@
                     createCloud();
                 }
             });
+
+            // Update sun and mountain positions
+            sunMesh.position.set(
+                playerCar.position.x - 50, // Adjust to position sun on the left
+                playerCar.position.y + 80, // Adjust to position sun higher in the sky
+                playerCar.position.z - 100 // Adjust to position sun ahead
+            );
+
+            mountain.position.set(
+                playerCar.position.x - 100, // Position mountain on the left
+                -50, // Ground level
+                playerCar.position.z - 200 // Position mountain ahead
+            );
+
+            // Ensure the sun always faces the camera
+            sunMesh.lookAt(camera.position);
 
             // Update score
             score += 1;
