@@ -521,7 +521,8 @@
                     0.5,
                     playerCar ? playerCar.position.z + 500 + Math.random() * 1000 : Math.random() * 1000 + 50
                 );
-                this.speed = 0.1 + Math.random() * 0.3; // Random speed between 0.2 and 0.4
+                this.speed = 0.2 + Math.random() * 0.2; // Random speed between 0.2 and 0.4
+                this.maxSpeed = this.speed;
                 this.targetLane = this.lane;
                 this.laneChangeCooldown = 0; // Cooldown before next lane change
                 this.turnSignal = null; // Direction of turn signal ('left' or 'right')
@@ -532,16 +533,66 @@
                 // Move forward
                 this.mesh.position.z += this.speed * deltaTime;
 
+                // Collision avoidance with other traffic cars
+                let carAhead = false;
+                let minDistance = Infinity;
+
+                trafficCars.forEach((otherCar) => {
+                    if (otherCar !== this) {
+                        const distanceZ = otherCar.mesh.position.z - this.mesh.position.z;
+                        const distanceX = Math.abs(otherCar.mesh.position.x - this.mesh.position.x);
+
+                        if (distanceX < 0.5 && distanceZ > 0 && distanceZ < 10) {
+                            // There is a car ahead in the same lane
+                            carAhead = true;
+                            minDistance = Math.min(minDistance, distanceZ);
+                        }
+                    }
+                });
+
+                // Adjust speed based on distance to car ahead
+                if (carAhead) {
+                    const deceleration = (10 - minDistance) * 0.05 * deltaTime;
+                    this.speed = Math.max(this.speed - deceleration, 0);
+                } else {
+                    // Accelerate back to max speed
+                    this.speed = Math.min(this.speed + 0.01 * deltaTime, this.maxSpeed);
+                }
+
                 // Lane changing logic
-                if (this.laneChangeCooldown <= 0 && Math.random() < 0.005) {
+                if (this.laneChangeCooldown <= 0 && Math.random() < 0.0005) { // Switch lanes way less often
                     // Decide to change lanes
                     const currentLaneIndex = lanePositions.indexOf(this.lane);
-                    const direction = Math.random() < 0.5 ? -1 : 1; // -1 for left, 1 for right
-                    const newLaneIndex = currentLaneIndex + direction;
-                    if (newLaneIndex >= 0 && newLaneIndex < lanePositions.length) {
-                        this.targetLane = lanePositions[newLaneIndex];
-                        this.turnSignal = direction === -1 ? 'left' : 'right';
-                        this.laneChangeCooldown = 200; // Cooldown before next lane change
+                    const possibleLanes = [];
+
+                    // Check lanes on both sides
+                    if (currentLaneIndex > 0) possibleLanes.push(currentLaneIndex - 1);
+                    if (currentLaneIndex < lanePositions.length - 1) possibleLanes.push(currentLaneIndex + 1);
+
+                    // Randomly pick a possible lane
+                    while (possibleLanes.length > 0) {
+                        const newLaneIndex = possibleLanes.splice(Math.floor(Math.random() * possibleLanes.length), 1)[0];
+                        const targetLane = lanePositions[newLaneIndex];
+
+                        // Check if lane is clear
+                        let laneClear = true;
+                        trafficCars.forEach((otherCar) => {
+                            if (otherCar !== this) {
+                                const distanceZ = Math.abs(otherCar.mesh.position.z - this.mesh.position.z);
+                                const distanceX = Math.abs(otherCar.mesh.position.x - targetLane);
+                                if (distanceX < 0.5 && distanceZ < 10) {
+                                    // There is a car in the target lane too close
+                                    laneClear = false;
+                                }
+                            }
+                        });
+
+                        if (laneClear) {
+                            this.targetLane = targetLane;
+                            this.turnSignal = targetLane > this.lane ? 'right' : 'left';
+                            this.laneChangeCooldown = 500; // Increase cooldown to make lane changes less frequent
+                            break;
+                        }
                     }
                 }
 
@@ -568,17 +619,6 @@
                     this.laneChangeCooldown -= deltaTime;
                 }
 
-                // Collision avoidance with other traffic cars
-                trafficCars.forEach((otherCar) => {
-                    if (otherCar !== this) {
-                        const distance = this.mesh.position.distanceTo(otherCar.mesh.position);
-                        if (distance < 5 && this.mesh.position.z > otherCar.mesh.position.z) {
-                            // Slow down to avoid collision
-                            this.speed = Math.max(this.speed - 0.01 * deltaTime, 0.1);
-                        }
-                    }
-                });
-
                 // Avoid collision with the player car
                 const distanceToPlayer = this.mesh.position.distanceTo(playerCar.position);
                 if (this.mesh.position.z < playerCar.position.z && distanceToPlayer < 10) {
@@ -591,7 +631,7 @@
                     }
                 } else {
                     // Speed up if not near the player
-                    this.speed = Math.min(this.speed + 0.01 * deltaTime, 0.4);
+                    this.speed = Math.min(this.speed + 0.01 * deltaTime, this.maxSpeed);
                 }
 
                 // Reset position if behind player
@@ -601,6 +641,7 @@
                     this.targetLane = this.lane;
                     this.mesh.position.x = this.lane;
                     this.speed = 0.2 + Math.random() * 0.2;
+                    this.maxSpeed = this.speed;
                 }
             }
 
@@ -640,7 +681,7 @@
 
         // Create traffic cars
         const trafficCars = [];
-        const trafficCarCount = 30; // Reduced number of traffic cars for better performance
+        const trafficCarCount = 150; // Adjusted number of traffic cars
 
         for (let i = 0; i < trafficCarCount; i++) {
             const trafficCar = new TrafficCar();
@@ -871,14 +912,13 @@
 
             setTimeout(handleInput, 16);
         }
-
+        let previousTime = performance.now();
         // Animation loop
         function animate() {
             if (gameOver || !playerCar) return;
 
             requestAnimationFrame(animate);
 
-            let currentTime = performance.now();
             const deltaTime = 1; // You can adjust this value or calculate actual deltaTime if needed
 
             // Increase cop car speed gradually up to its max speed
