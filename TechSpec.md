@@ -1,259 +1,413 @@
-## Game Engines
+Class: Game (P0)
+This class manages the overall game, coordinating all components.
 
-1. **Phaser.js** - Very easy to use and good for 2D models
-2. **Three.js** - Very great graphics, great for 3D and has some 2D elements to it.
-3. **Babylon.js** - Good for both 3D and 2D graphics, simple to use, can blend 2D and 3D
-4. **PIXI.js** - Great 2D visual effects game
-5. **Melon.js** - Simple, easy, 2D game engine, great for arcade games and simple designs
+Variables:
 
-- I would recommend using Three.js as it can handle the 3D and 2D aspects of the game, although it might be somewhat technically challenging
+scene: THREE.Scene
+The main scene of the game.
 
----
+camera: THREE.Camera
+The camera viewing the scene.
 
-### Class: Player - (P0/P1)
+renderer: THREE.Renderer
+The renderer displaying the scene.
 
-This class represents the player and contains all player-related data.
+player: Player
+The player's car instance.
 
-**Variables:**
+copCar: CopCar
+The cop car chasing the player.
 
-- `name`: String  (P0)
-  Player's username.
+trafficCars: List<TrafficCar>
+The traffic cars on the road.
 
-- `car`: Car  (P1 - doesnt need multiple cars)
-  The car currently selected by the player.
+road: Road
+The road and environment.
 
-- `coins`: Integer (P0)
-  Amount of in-game currency the player has.
+keys: Object
+Tracks the state of user input keys.
 
-- `garage`: List<Car>  (P1)
-  Collection of cars owned by the player.
+score: Integer
+The player's score.
 
-- `inventory`: List<CosmeticItem>  (P2 - cosmetics can be added in future iterations)
-  List of cosmetic items (like liveries, rims, colors) the player has acquired.
+gameOver: Boolean
+Indicates if the game is over.
 
-- `boostsAvailable`: Integer  (P1 - importnant but not requried to the core gameplay)
-  Number of boost charges available to the player.
+settingsMenu: SettingsMenu
+Manages game settings.
 
-- `controls`: ControlScheme  (P0)
-  Key bindings for player actions.
+speechRecognitionHandler: SpeechRecognitionHandler
+Handles speech recognition for subtitles.
 
----
+subtitleElement: DOM Element
+Displays subtitles on the screen.
 
-### Class: Car (P0)
+Methods:
 
-This class represents the player's car.
+init(): (P0)
+Initializes the game.
 
-**Variables:**
+loadPlayerModel(): (P0)
+Loads the player's car model.
 
-- `modelName`: String  (P0)
-  Name of the car model.
+startIntroAnimation(): (P0)
+Starts the game's intro animation.
 
-- `speed`: Float  (P0)
-  Maximum speed of the car.
+animate(): (P0)
+The main game loop, updates and renders the game.
 
-- `acceleration`: Float  (P0)
-  How quickly the car increases speed.
+update(deltaTime): (P0)
+Updates the game state each frame.
 
-- `braking`: Float  (P0)
-  Effectiveness of the car's braking system.
+gameOverHandler(message): (P0)
+Handles the game over state.
 
-- `handling`: Float  (P1)
-  Car's responsiveness to steering inputs.
+Class: Player (P0)
+This class represents the player's car and its behavior.
 
-- `price`: Integer  (P1)
-  Cost of the car in coins.
+Variables:
 
-- `cosmetics`: Cosmetics  (P2)
-  Visual customization options applied to the car.
+game: Game
+Reference to the main game instance.
 
-- `boostCharge`: Float  (P1)
-  Current charge level of the car's boost ability.
+mesh: THREE.Mesh
+The 3D model of the player's car.
 
-- `headlightsOn`: Boolean  (P2)
-  Indicates whether the headlights are turned on.
+playerSpeed: Float
+The current speed of the player's car.
 
----
+maxSpeed: Float
+The maximum speed the player's car can reach.
 
-### Class: Level ()
+acceleration: Float
+How quickly the player's car accelerates.
 
-This class encapsulates all level-specific data and mechanics, including the cop car and weather.
+deceleration: Float
+How quickly the player's car decelerates.
 
-**Variables:**
+currentRotationAngle: Float
+The current rotation angle of the car.
 
-- `levelNumber`: Integer  (P0 - but will only have 1 level on mvp)
-  Identifier for the level's sequence.
+maxRotationAngle: Float
+The maximum rotation angle when turning.
 
-- `distanceToFinish`: Float  (P0 - but static for mvp)
-  Total distance the player needs to travel to complete the level.
+rotationSpeed: Float
+The speed at which the car rotates when turning.
 
-- `copSpeed`: Float  (P0 - same)
-  Speed at which the cop car pursues the player.
+Methods:
 
-- `copCarModel`: String  (P2)
-  Model name of the cop car.
+update(deltaTime): (P0)
+Updates the player's position and state.
 
-- `copPosition`: Coordinates  (P0)
-  Current position of the cop car.
+handleInput(): (P0)
+Handles user input to control the car.
 
-- `weatherType`: String  (P2 - not neccessicary for core gameplay)
-  Current weather condition (e.g., "Sunny", "Rainy").
+activateBoost(): (P1)
+Activates a speed boost for a short duration.
 
-- `visibility`: Float  (P2 - not neccessicary for core gameplay)
-  Level of visibility affected by weather conditions.
+toggleWindshieldWipers(): (P2)
+Toggles the windshield wipers on or off.
 
-- `isRaining`: Boolean  (P2 - not neccessicary for core gameplay)
-  Indicates whether it is raining.
+toggleHeadlights(): (P2)
+Toggles the car's headlights.
 
-- `windshieldWipersOn`: Boolean  (P2 - not neccessicary for core gameplay)
-  Indicates whether the windshield wipers are active.
+Class: CopCar (P0)
+This class represents the cop car chasing the player.
 
-- `timeOfDay`: String  (P2 - not neccessicary for core gameplay)
-  Indicates whether it's day or night.
+Variables:
 
-- `difficulty`: String  (P1 - not multiple levels)
-  Level of challenge (e.g., "Easy", "Medium", "Hard").
+game: Game
+Reference to the main game instance.
 
-- `starsEarned`: Integer  (P1 - good feature but not first to be implemented)
-  Number of stars awarded based on performance (0 to 3).
+mesh: THREE.Mesh
+The 3D model of the cop car.
 
-- `timer`: Float  (P0)
-  Time taken to complete the level.
+copMaxSpeed: Float
+The maximum speed of the cop car.
 
-- `playerPosition`: Coordinates  (P0)
-  Current position of the player's car.
+copAcceleration: Float
+How quickly the cop car accelerates.
 
-- `map`: Map  (P1)
-  Map object containing the layout for the level.
+copCurrentSpeed: Float
+The current speed of the cop car.
 
----
+siren: THREE.Mesh
+The siren light on the cop car.
 
-### Class: Map (P0)
+sirenOn: Boolean
+Indicates whether the siren is active.
 
-This class defines the specific layout and terrain features for each level.
+Methods:
 
-**Variables:**
+update(deltaTime): (P0)
+Updates the cop car's position and behavior.
 
-- `curvature`: Float  (P0)
-  Degree of the road's curvature.
+startSiren(): (P1)
+Activates the cop car's siren.
 
-- `length`: Float  (P0)
-  Total length of the map.
+stopSiren(): (P1)
+Deactivates the cop car's siren.
 
-- `obstacles`: List<Obstacle>  (P1)
-  Obstacles present on the map.
+toggleSiren(): (P1)
+Toggles the siren light on and off.
 
-- `terrainFeatures`: List<TerrainFeature>  (P1)
-  Specific features like hills or curves.
+Class: TrafficCar (P0)
+This class represents the traffic cars on the road.
 
-- `backgroundColor`: String  (P1)
-  Color scheme of the map (e.g., for daytime or nighttime).
+Variables:
 
----
+game: Game
+Reference to the main game instance.
 
-### Associated Classes and Data Structures
+mesh: THREE.Mesh
+The 3D model of the traffic car.
 
-#### Class: ControlScheme (P0)
+lane: Float
+The current lane position of the traffic car.
 
+speed: Float
+The speed at which the traffic car moves.
+
+maxSpeed: Float
+The maximum speed the traffic car can reach.
+
+targetLane: Float
+The lane the traffic car is moving towards.
+
+laneChangeCooldown: Float
+Cooldown before the car can change lanes again.
+
+turnSignal: String
+Indicates if the car is signaling a lane change.
+
+Methods:
+
+update(deltaTime): (P0)
+Updates the traffic car's position and behavior.
+
+updateTurnSignals(): (P0)
+Updates the traffic car's turn signals.
+
+Class: Road (P0)
+This class represents the road and environment setup.
+
+Variables:
+
+game: Game
+Reference to the main game instance.
+
+scene: THREE.Scene
+The main scene of the game.
+
+roadWidth: Float
+The width of the road.
+
+roadLength: Float
+The length of the road.
+
+Methods:
+
+createRoad(): (P0)
+Creates the road mesh.
+
+createHighwayLines(): (P0)
+Creates the highway lines on the road.
+
+createBarriers(): (P0)
+Creates the barriers along the road.
+
+Class: InputHandler (P0)
+This class handles user input for the game.
+
+Variables:
+
+game: Game
+Reference to the main game instance.
+Methods:
+
+init(): (P0)
+Initializes event listeners for keyboard input.
+Class: SpeechRecognitionHandler (P1)
+This class handles speech recognition for subtitles.
+
+Variables:
+
+game: Game
+Reference to the main game instance.
+
+recognition: SpeechRecognition
+The speech recognition object.
+
+Methods:
+
+init(): (P1)
+Initializes speech recognition.
+
+start(): (P1)
+Starts speech recognition.
+
+stop(): (P1)
+Stops speech recognition.
+
+Class: SettingsMenu (P0)
+This class handles the settings menu logic.
+
+Variables:
+
+game: Game
+Reference to the main game instance.
+
+subtitlesEnabled: Boolean
+Indicates whether subtitles are enabled.
+
+Methods:
+
+init(): (P0)
+Initializes the settings menu.
+Class: IntroAnimation (P0)
+This class manages the intro animation sequence.
+
+Variables:
+
+game: Game
+Reference to the main game instance.
+
+camera: THREE.Camera
+The camera used in the game.
+
+playerCar: THREE.Mesh
+The player's car mesh.
+
+copCar: THREE.Mesh
+The cop car mesh.
+
+subtitleElement: DOM Element
+Displays subtitles on the screen.
+
+Methods:
+
+start(): (P0)
+Starts the intro animation.
+
+renderIntro(): (P0)
+Renders the intro animation frames.
+
+Class: Garage (P1)
+This class represents the player's garage where cars are stored.
+
+Variables:
+
+cars: List<Car>
+List of cars owned by the player.
+
+selectedCar: Car
+The car currently selected for use.
+
+Methods:
+
+addCar(car): (P1)
+Adds a new car to the garage.
+
+selectCar(car): (P1)
+Selects a car from the garage.
+
+Class: Upgrades (P2)
+This class handles car upgrades and customizations.
+
+Variables:
+
+availableUpgrades: List<UpgradeItem>
+List of available upgrades.
+Methods:
+
+applyUpgrade(car, upgrade): (P2)
+Applies an upgrade to a car.
+Class: Weather (P2)
+This class manages weather conditions in the game.
+
+Variables:
+
+currentWeather: String
+The current weather condition (e.g., "Sunny", "Rainy").
+
+visibility: Float
+The level of visibility affected by weather.
+
+isRaining: Boolean
+Indicates if it is raining.
+
+Methods:
+
+updateWeather(): (P2)
+Updates the weather conditions over time.
+
+applyWeatherEffects(): (P2)
+Applies weather effects to the game environment.
+
+Class: RoadTerrain (P1)
+This class represents different terrains on the road.
+
+Variables:
+
+type: String
+Type of terrain (e.g., "Asphalt", "Gravel").
+
+friction: Float
+Friction coefficient affecting car handling.
+
+Methods:
+
+applyTerrainEffects(car): (P1)
+Modifies car behavior based on terrain.
+Associated Classes and Data Structures
+Class: ControlScheme (P0)
 Defines the player's control keys.
 
-**Variables:**
+Variables:
 
-- `leftKey`: String  (P0)
-  Key assigned to move the car left.
+leftKey: String
+Key assigned to move the car left.
 
-- `rightKey`: String  (P0)
-  Key assigned to move the car right.
+rightKey: String
+Key assigned to move the car right.
 
-- `boostKey`: String  (P1)
-  Key assigned to activate the car's boost.
+accelerateKey: String
+Key assigned to accelerate the car.
 
-- `honkKey`: String  (P1 - easy to implement)
-  Key assigned to honk the car's horn.
+brakeKey: String
+Key assigned to brake the car.
 
-- `wipersKey`: String  (P2)
-  Key assigned to toggle the windshield wipers.
+boostKey: String (P1)
+Key assigned to activate the car's boost.
 
-- `headlightsKey`: String  (P2)
-  Key assigned to toggle the headlights.
+wipersKey: String (P2)
+Key assigned to toggle the windshield wipers.
 
----
+headlightsKey: String (P2)
+Key assigned to toggle the headlights.
 
-#### Class: Cosmetics
+Class: UpgradeItem (P2)
+Represents an upgrade that can be applied to a car.
 
-Contains cosmetic attributes for cars.
+Variables:
 
-**Variables:**
+name: String
+Name of the upgrade.
 
-- `color`: String  
-  Color of the car's body.
+type: String
+Type of upgrade (e.g., "Engine", "Tires").
 
-- `rims`: String  
-  Design of the car's rims.
+effect: Object
+The effect of the upgrade on car stats.
 
-- `livery`: String  
-  Graphics or decals applied to the car.
+Additional Methods to Implement
+In Class: Player
+toggleWindshieldWipers(): (P2)
+Toggles the windshield wipers.
 
----
+toggleHeadlights(): (P2)
+Toggles the headlights.
 
-#### Class: CosmeticItem
-
-Items that can be applied to cars for visual customization.
-
-**Variables:**
-
-- `name`: String  
-  Name of the cosmetic item.
-
-- `type`: String  
-  Type of cosmetic (e.g., "Color", "Rims", "Livery").
-
-- `rarity`: String  
-  Rarity level of the item (e.g., "Common", "Rare").
-
----
-
-#### Class: Obstacle (P1)
-
-Represents obstacles on the map.
-
-**Variables:**
-
-- `type`: String  (P1)
-  Kind of obstacle (e.g., "OtherCar", "Pothole", "Construction").
-
-- `position`: Coordinates  (P1)
-  Location of the obstacle on the map.
-
-- `effect`: String  (P1)
-  Impact on the player when encountered (e.g., "SlowDown", "GameOver").
-
----
-
-#### Class: TerrainFeature
-
-Represents features like curves or hills.
-
-**Variables:**
-
-- `type`: String  
-  Feature type (e.g., "Curve", "Hill").
-
-- `position`: Coordinates  
-  Location of the feature on the map.
-
-- `intensity`: Float  
-  Severity or degree of the feature (e.g., how sharp a curve is).
-
----
-
-#### Class: Coordinates
-
-Used for positioning within the game world.
-
-**Variables:**
-
-- `x`: Float  
-  Horizontal position value.
-
-- `y`: Float  
-  Vertical position value.
+In Class: Game
+updateWeatherEffects(): (P2)
+Updates game visuals based on weather.
