@@ -49,6 +49,9 @@ export default class Game {
         this.gameStarted = false;
         this.sirenInterval = null;
         this.sirenOn = false;
+
+        // Load the stored number of coins from localStorage
+        this.coins = parseInt(localStorage.getItem('coins') || '0', 10);
     }
 
     async init() {
@@ -127,7 +130,7 @@ export default class Game {
 
     loadSmokeTexture() {
         const textureLoader = new THREE.TextureLoader();
-        //this.smokeTexture = textureLoader.load('smoke.png'); 
+        //this.smokeTexture = textureLoader.load('smoke.png');
     }
 
     setupEventListeners() {
@@ -234,6 +237,9 @@ export default class Game {
             this.loadingScreen.style.display = 'none';
             this.mainMenu.style.display = 'flex';
 
+            // Update the coin display on the main menu
+            document.getElementById('coin-display').textContent = 'Coins: ' + this.coins;
+
             this.startButton.addEventListener('click', () => {
                 if (!this.modelLoaded) {
                     alert('The car model is still loading. Please wait a moment.');
@@ -321,7 +327,6 @@ export default class Game {
         this.sunMesh.lookAt(this.camera.position);
     }
 
-    // Use the correct stop method
     gameOverHandler(message) {
         this.gameOver = true;
         // Instead of alert, we show a leaderboard
@@ -341,6 +346,11 @@ export default class Game {
         // Save back to localStorage
         localStorage.setItem('highScores', JSON.stringify(scores));
 
+        // Add coins
+        let coins = parseInt(localStorage.getItem('coins') || '0', 10);
+        coins += currentScore;
+        localStorage.setItem('coins', coins.toString());
+
         // Show the leaderboard overlay
         const leaderboardOverlay = document.getElementById('leaderboard-overlay');
         const finalScoreElement = document.getElementById('final-score');
@@ -358,12 +368,11 @@ export default class Game {
         leaderboardOverlay.style.display = 'block';
 
         // Stop speech recognition if running
-        this.speechRecognitionHandler.stop(); // Use 'stop' instead of 'stopSpeechRecognition'
+        this.speechRecognitionHandler.stop();
 
         // Add restart button functionality
         const restartButton = document.getElementById('restart-button');
         restartButton.addEventListener('click', () => {
-            // Reloading the page is a simple way to restart the game
             location.reload();
         });
     }
