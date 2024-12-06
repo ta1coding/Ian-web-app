@@ -8,6 +8,7 @@
 - created homescreen
 - added in 3d model of a porsche as the user car
 - created subtitles to be able to pick up on words said by the surrounding environment. 
+- added local leaderboard (since firebase storage wasn't yet available)
 
 Where this is headed:
 
@@ -31,7 +32,7 @@ P1:
 
 - add control Scheme class to control what button leads to different outcomes (boost, windshields wipers/honk in future)
 
-- add global leaderboard. 
+- update leaderboard to be global using firebase storage
 
 P2:
 
