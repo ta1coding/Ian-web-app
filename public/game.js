@@ -321,7 +321,7 @@ export default class Game {
         this.sunMesh.lookAt(this.camera.position);
     }
 
-    // Modified gameOverHandler to show leaderboard instead of alert
+    // Use the correct stop method
     gameOverHandler(message) {
         this.gameOver = true;
         // Instead of alert, we show a leaderboard
@@ -348,7 +348,6 @@ export default class Game {
 
         finalScoreElement.textContent = currentScore;
 
-        // Clear the list first
         leaderboardList.innerHTML = '';
         scores.forEach(score => {
             const li = document.createElement('li');
@@ -359,6 +358,13 @@ export default class Game {
         leaderboardOverlay.style.display = 'block';
 
         // Stop speech recognition if running
-        this.speechRecognitionHandler.stopSpeechRecognition();
+        this.speechRecognitionHandler.stop(); // Use 'stop' instead of 'stopSpeechRecognition'
+
+        // Add restart button functionality
+        const restartButton = document.getElementById('restart-button');
+        restartButton.addEventListener('click', () => {
+            // Reloading the page is a simple way to restart the game
+            location.reload();
+        });
     }
 }
