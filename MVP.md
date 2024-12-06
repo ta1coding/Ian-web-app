@@ -9,7 +9,7 @@
 - added in 3d model of a porsche as the user car
 - created subtitles to be able to pick up on words said by the surrounding environment. 
 - added local leaderboard (since firebase storage wasn't yet available)
-- added coins obtained from the score received each restart -- precurser to garage functionality
+- added coins obtained from the score received each restart -- precursor to garage functionality
 
 Where this is headed:
 
